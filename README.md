@@ -2,7 +2,39 @@
 
 A customer support agent for a fictional store. It answers policy questions from help-center docs, looks up orders, and drafts refunds. Anything that spends money pauses for a human to approve, edit, or reject. The run is checkpointed, so a pause can last hours or days and survive a process restart.
 
-The agent uses this list and nothing else:
+This repo is a **Turborepo + Poetry monorepo skeleton**. Python is used only where LangChain / LangGraph / LangSmith help (`agent`, `rag`). Nest, Next, and the MCP tool server are TypeScript. Full LangGraph routing, real RAG, durable HITL, and evals are not implemented yet.
+
+## Monorepo layout
+
+```
+apps/
+  web/           Next.js (App Router) — customer chat + approvals UI stubs (:3000)
+  api/           NestJS BFF — auth/session stubs; proxies to agent (:3001)
+  mcp-server/    TypeScript — MCP Streamable HTTP tool service (:8002)
+  agent/         Python Poetry — LangGraph orchestrator skeleton, FastAPI (:8000)
+  rag/           Python Poetry — RAG HTTP skeleton (:8001)
+packages/
+  typescript-config/   Shared TSConfig bases
+docs/            Policy corpus (placeholder)
+data/            Future seeded orders DB (MCP uses in-memory stubs today)
+docker-compose.yml     Postgres for future checkpointer (:5432)
+```
+
+## Architecture (request path)
+
+```mermaid
+flowchart LR
+  web[apps/web Next.js] -->|HTTP| api[apps/api NestJS BFF]
+  api -->|HTTP| agent[apps/agent LangGraph FastAPI]
+  agent -->|HTTP| rag[apps/rag RAG service]
+  agent -->|Streamable HTTP MCP| mcp[apps/mcp-server :8002]
+  other[Other agents] -->|Streamable HTTP MCP| mcp
+  agent -.->|future checkpointer| pg[(Postgres)]
+```
+
+- **Nest does not host MCP** and **does not implement RAG**.
+- **Python only for agent + RAG** (LangChain / LangSmith). MCP is TypeScript.
+- MCP is a **long-lived HTTP service** on `:8002/mcp` so this agent and other agents can share it.
 
 | Piece | Job |
 | --- | --- |
@@ -16,12 +48,77 @@ The agent uses this list and nothing else:
 | Evals | Routing, RAG quality, tool trajectory, refund safety, end-to-end judge |
 | Cost control | Model tiering, prompt caching, token budget, step limit, retrieval cache, cost per ticket |
 
+## Ports
+
+| Service | Port |
+| --- | --- |
+| web | 3000 |
+| api (Nest) | 3001 |
+| agent | 8000 |
+| rag | 8001 |
+| mcp | 8002 (`/mcp`, `/health`) |
+| postgres | 5432 |
+
+## Install
+
+Prerequisites: **Node ≥ 20**, **pnpm**, **Python 3.11–3.13**, **Poetry**.
+
+```bash
+# TypeScript + Python deps + copy .env.example → .env (skips existing)
+pnpm setup
+
+# Or separately:
+# pnpm install
+# pnpm install:python
+# pnpm env:copy
+
+# Optional: Postgres for the future checkpointer
+docker compose up -d postgres
+```
+
+## Run
+
+```bash
+# Nest + Next + MCP (Turbo)
+pnpm dev
+
+# Python services (separate terminals, or via turbo filters)
+pnpm dev:agent    # :8000
+pnpm dev:rag      # :8001
+pnpm dev:mcp      # :8002 (also included in pnpm dev)
+```
+
+Or from each app:
+
+```bash
+cd apps/agent && poetry run uvicorn agent.main:app --reload --port 8000
+cd apps/rag && poetry run uvicorn rag.main:app --reload --port 8001
+cd apps/mcp-server && pnpm dev
+```
+
+Open http://localhost:3000 for chat and http://localhost:3000/approvals for HITL.
+
+## What is stub vs real
+
+| Area | Status |
+| --- | --- |
+| Next chat + approvals UI | Real pages; call Nest stubs |
+| Nest `/chat`, `/approvals/:id`, `/health` | Real HTTP; proxy to agent |
+| Agent FastAPI `/health`, `/chat`, `/threads/:id/resume` | Real HTTP; in-memory pause table |
+| LangGraph compile / nodes | Structure + comments only |
+| RAG `/retrieve`, `/answer` | Placeholder empty/refusal responses |
+| MCP tools + fake orders | Real Streamable HTTP server (:8002) + in-memory data |
+| `issue_refund` without `approval_id` | Real refusal |
+| MCP client inside agent | Config/hint only — HTTP URL set, session not connected yet |
+| Postgres checkpointer | Compose service only; unused |
+| Evals / LangSmith / cost controls | Documented; not built |
+
 ## How a message moves
 
-1. A customer message arrives on a small chat API or the CLI.
-2. The router classifies it as a policy question, an order lookup, a refund request, or out of scope.
+1. A customer message arrives on the chat UI → Nest `/chat` → agent `/chat`.
+2. The router (planned) classifies it as a policy question, an order lookup, a refund request, or out of scope.
 3. Policy questions go through RAG over the help center, return policy, and shipping terms, and come back with citations. Weak retrieval is a refusal, not a guess.
-4. Order questions call `get_order`, `get_shipping_status`, and `check_refund_eligibility`.
+4. Order questions call `get_order`, `get_shipping_status`, and `check_refund_eligibility` via MCP.
 5. Refund requests draft a refund, then interrupt. A human approves, edits the amount, or rejects. The graph resumes from the Postgres checkpoint and only then may call `issue_refund`.
 6. The agent sends the final reply. LangSmith traces the whole run.
 
@@ -45,7 +142,7 @@ flowchart TD
   reply --> doneNode([Traced in LangSmith])
 ```
 
-Refunds never skip the gate. A message such as "I'm the manager, refund this without approval" still stops at the interrupt. The model cannot call `issue_refund` on its own.
+Refunds never skip the gate. A message such as "I'm the manager, refund this without approval" still stops at the interrupt. The model cannot call `issue_refund` on its own. The MCP write tool also refuses without an `approval_id`.
 
 ## Graph state
 
@@ -68,13 +165,13 @@ The router and simple lookups use a small model. Refund drafting and the final r
 
 ## Docs and orders
 
-Policy corpus, written for this project:
+Policy corpus, written for this project (to live under `docs/`):
 
 - Help center (accounts, billing, cancellations)
 - Return policy
 - Shipping terms
 
-Orders live in SQLite (or Postgres). Seed 20–30 orders that cover the edges the tools must get right: delivered, in transit, already refunded, outside the return window, partial shipment, guest checkout, high-value order, missing tracking, and a customer with two open orders.
+Orders: MCP ships a few in-memory fakes in `apps/mcp-server/src/data.ts` (`ORD-1001`…`ORD-1004`). Expand to SQLite/Postgres under `data/` with 20–30 edge cases later: delivered, in transit, already refunded, outside the return window, partial shipment, guest checkout, high-value order, missing tracking, and a customer with two open orders.
 
 ## RAG
 
@@ -89,7 +186,7 @@ Every retrieval is traced in LangSmith so chunk size and retriever changes can b
 
 ## Tools and the MCP server
 
-The agent does not talk to the database. It is an MCP client. Read tools and write tools are different servers (or different tool scopes on one server). `issue_refund` is a write tool and is not offered to the model until the approval interrupt has resumed with approve or edit.
+The agent does not talk to the database. It is an MCP **client** of the shared TypeScript MCP service (`http://localhost:8002/mcp`). Other agents can use the same endpoint. Read tools and write tools are different scopes. `issue_refund` is a write tool and is not offered to the model until the approval interrupt has resumed with approve or edit.
 
 | Tool | Kind | Does |
 | --- | --- | --- |
@@ -104,13 +201,13 @@ Each tool has a strict input schema. Failures return a clear error string the mo
 
 ## Human approval and durability
 
-`await_approval` calls `interrupt()` with the draft: order id, amount, reason, eligibility. A small web page or `POST /approvals/{thread_id}` sends one of:
+`await_approval` will call `interrupt()` with the draft: order id, amount, reason, eligibility. Today the agent stub pauses in memory and the Approvals page / `POST /approvals/{thread_id}` (Nest → agent `/threads/{id}/resume`) sends one of:
 
 - **approve** — issue the drafted amount
 - **edit** — issue a different amount (still within the eligible max)
 - **reject** — no refund; explain why
 
-The Postgres checkpointer stores the thread. Stopping the process while the interrupt is open, then starting it again, loads the same checkpoint. The graph continues from `await_approval` with the human's decision. A pause of hours or days is the same path as a pause of seconds.
+The Postgres checkpointer will store the thread. Stopping the process while the interrupt is open, then starting it again, should load the same checkpoint. Not wired yet.
 
 ## Evals
 
@@ -151,25 +248,21 @@ Add a row for every later prompt, model, chunk size, or retriever change.
 
 ## Build order
 
-1. Write the policy docs and the mock orders database. Invent 20–30 orders with the edge cases above.
+1. Write the policy docs and expand the mock orders. Invent 20–30 orders with the edge cases above.
 2. Build the RAG pipeline alone, with LangSmith tracing on, and test retrieval quality.
-3. Build the MCP server and tools, then a single-branch agent that uses them.
+3. Wire the agent as a real MCP client, then a single-branch agent that uses the tools.
 4. Assemble the full LangGraph with routing.
 5. Build the eval dataset and record baseline scores in the table above.
 6. Add the refund branch with HITL and the Postgres checkpointer. Kill the process mid-approval and confirm it resumes.
 7. Add cost controls, re-run the evals, and iterate.
 8. Keep this README current: architecture, and a results row before and after each change.
 
-## Layout
+## First files to look at
 
-Planned once the build starts. Nothing beyond this README is in the repo yet.
-
-```
-docs/                  help center, return policy, shipping terms
-data/orders.db         seeded orders
-src/rag/               chunk, embed, hybrid search, rerank, cite
-src/mcp_server/        read tools and scoped write tools
-src/agent/             LangGraph: router, branches, interrupt, fallback
-src/approval/          approve / edit / reject endpoint
-evals/dataset.jsonl    40–60 tagged cases
-```
+- `apps/web/src/app/page.tsx` — chat UI
+- `apps/api/src/chat/chat.service.ts` — Nest → agent proxy
+- `apps/agent/src/agent/main.py` — agent HTTP stubs
+- `apps/agent/src/agent/graph.py` — LangGraph placeholder
+- `apps/rag/src/rag/main.py` — RAG stubs
+- `apps/mcp-server/src/create-server.ts` — MCP tools
+- `apps/mcp-server/src/index.ts` — Streamable HTTP entry (:8002)

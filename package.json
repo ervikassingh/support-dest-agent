@@ -1,0 +1,28 @@
+{
+  "name": "support-desk-agent",
+  "private": true,
+  "packageManager": "pnpm@10.17.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "setup": "pnpm install && pnpm install:python && pnpm env:copy",
+    "install:python": "poetry -C apps/agent env use python3.11 && poetry -C apps/agent install && poetry -C apps/rag env use python3.11 && poetry -C apps/rag install",
+    "env:copy": "cp -n .env.example .env; cp -n apps/web/.env.example apps/web/.env.local; cp -n apps/api/.env.example apps/api/.env; cp -n apps/mcp-server/.env.example apps/mcp-server/.env; cp -n apps/agent/.env.example apps/agent/.env; cp -n apps/rag/.env.example apps/rag/.env",
+    "dev": "turbo run dev --filter=web --filter=api --filter=mcp-server",
+    "dev:all": "turbo run dev --filter=web --filter=api --filter=mcp-server --filter=agent --filter=rag",
+    "dev:web": "turbo run dev --filter=web",
+    "dev:api": "turbo run dev --filter=api",
+    "dev:agent": "turbo run dev --filter=agent",
+    "dev:rag": "turbo run dev --filter=rag",
+    "dev:mcp": "turbo run dev --filter=mcp-server",
+    "build": "turbo run build --filter=web --filter=api --filter=mcp-server",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  }
+}

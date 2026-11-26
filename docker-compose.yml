@@ -1,0 +1,26 @@
+# Local infra. Default: Postgres for the future LangGraph checkpointer.
+# App processes usually run on the host via pnpm / poetry (see README).
+#
+# Ports (host):
+#   web 3000 | api 3001 | agent 8000 | rag 8001 | mcp 8002
+#   postgres 5432
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: support
+      POSTGRES_PASSWORD: support
+      POSTGRES_DB: support_desk
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U support -d support_desk"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
