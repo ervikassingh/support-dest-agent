@@ -1,6 +1,15 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { Plus_Jakarta_Sans } from 'next/font/google';
+import { SiteHeader } from '../components/SiteHeader';
 import './globals.css';
+
+const sans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Support Desk',
@@ -10,15 +19,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <header className="site-header">
-          <a href="/">Support Desk</a>
-          <nav>
-            <a href="/">Chat</a>
-            <a href="/approvals">Approvals</a>
-          </nav>
-        </header>
-        <main className="site-main">{children}</main>
+      <body className={sans.variable}>
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
+        <SiteHeader />
+        <main id="main" className="site-main">
+          {children}
+        </main>
       </body>
     </html>
   );
