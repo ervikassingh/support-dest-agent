@@ -86,7 +86,7 @@ tests/test_evals_metrics.py
 | `CHEAP_MODEL`, `MAIN_MODEL` | `openai/gpt-4o-mini`, `anthropic/claude-haiku-4.5` |
 | `CONTEXT_TOKEN_BUDGET`, `SUMMARIZE_THRESHOLD_RATIO`, `KEEP_RECENT_MESSAGES` | `128000`, `0.7`, `8` |
 | `EMAIL_PROVIDER` | `stub` (only option wired) |
-| `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | `false`, —, `support-desk-agent` |
+| `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | `true`, —, `support-agent` |
 | `CHAT_INPUT_USD_PER_MILLION`, `CHAT_OUTPUT_USD_PER_MILLION` | unset (eval cost is `null`) |
 
 ## Run

@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import re
+import socket
 import uuid
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 from pgvector.psycopg.vector import Vector
@@ -21,6 +24,30 @@ from rag.parse import parse_file
 from rag.settings import get_settings
 
 _MAX_BYTES = 20 * 1024 * 1024
+
+
+def safe_filename(name: str) -> str:
+    base = Path(name.replace("\\", "/")).name
+    base = re.sub(r"[^A-Za-z0-9._-]", "_", base).strip("._")
+    return (base or "upload")[:120]
+
+
+def assert_public_http_url(url: str) -> None:
+    """Refuse non-http schemes and any host that resolves to a non-public address.
+
+    shortcut: the address is checked before the connection, not pinned to it.
+    """
+    parsed = urlsplit(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise RuntimeError("Only public http(s) URLs can be ingested")
+    try:
+        infos = socket.getaddrinfo(parsed.hostname, None)
+    except socket.gaierror as exc:
+        raise RuntimeError(f"Could not resolve {parsed.hostname}") from exc
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global:
+            raise RuntimeError(f"Refusing to fetch non-public address for {parsed.hostname}")
 
 
 def slugify(source_key: str) -> str:
@@ -55,8 +82,12 @@ async def reserve_document(
             )
             version = int((await current.fetchone())["version"])
             doc_id = uuid.uuid4()
+            filename = safe_filename(filename)
             relative = Path(slug) / f"v{version}" / filename
-            absolute = settings.uploads_path / relative
+            root = settings.uploads_path.resolve()
+            absolute = (root / relative).resolve()
+            if not absolute.is_relative_to(root):
+                raise RuntimeError("Upload path escapes the uploads directory")
             absolute.parent.mkdir(parents=True, exist_ok=True)
             try:
                 async with conn.transaction():
@@ -130,10 +161,23 @@ async def _chunk_count(conn, document_id: str) -> int:
 
 
 async def _download(url: str, dest: Path) -> str | None:
-    target = google_export_url(url) or url
-    async with httpx.AsyncClient(timeout=45.0, follow_redirects=True) as client:
-        response = await client.get(target)
-    if "accounts.google.com" in str(response.url):
+    current = google_export_url(url) or url
+    async with httpx.AsyncClient(timeout=45.0, follow_redirects=False) as client:
+        response = None
+        for _ in range(5):
+            assert_public_http_url(current)
+            response = await client.get(current)
+            if response.status_code not in {301, 302, 303, 307, 308}:
+                break
+            location = response.headers.get("location")
+            if not location:
+                break
+            current = urljoin(current, location)
+        else:
+            raise RuntimeError("Too many redirects")
+    if response is None:
+        raise RuntimeError("Download produced no response")
+    if "accounts.google.com" in current:
         raise RuntimeError("Google document is not public")
     response.raise_for_status()
     if len(response.content) > _MAX_BYTES:

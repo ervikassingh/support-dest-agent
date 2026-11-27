@@ -43,8 +43,8 @@ All ineligible results have `max_amount: 0`.
 
 ```mermaid
 flowchart TD
-  call([issue_refund order_id, amount, approval_id?, reason?]) --> aid{approval_id non-blank?}
-  aid -->|no| e1["error: refused, missing approval_id"]
+  call([issue_refund order_id, amount, approval_id?, reason?]) --> aid{HMAC matches order and cents?}
+  aid -->|no| e1["error: refused, approval_id missing or wrong"]
   aid -->|yes| elig[check_refund_eligibility]
   elig --> ok{eligible?}
   ok -->|no| e2[error: eligibility reason]

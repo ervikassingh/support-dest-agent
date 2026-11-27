@@ -20,9 +20,11 @@ class Settings(BaseSettings):
     keep_recent_messages: int = 8
 
     email_provider: str = "stub"  # stub | resend (resend not wired yet)
+    # shortcut: shared with mcp-server; set APPROVAL_SECRET on both before exposing MCP
+    approval_secret: str = "dev-approval-secret"
     langsmith_tracing: bool = False
     langsmith_api_key: str | None = None
-    langsmith_project: str = "support-desk-agent"
+    langsmith_project: str = "support-agent"
     chat_input_usd_per_million: float | None = None
     chat_output_usd_per_million: float | None = None
 

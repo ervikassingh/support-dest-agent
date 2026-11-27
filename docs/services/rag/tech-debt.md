@@ -4,8 +4,6 @@ Severity levels are defined in [architecture/tech-debt.md](../../architecture/te
 
 | ID | Item | Severity |
 | --- | --- | --- |
-| RAG-TD-2 | URL ingest can fetch internal addresses (SSRF) | High |
-| RAG-TD-3 | Upload filename is not sanitized before building the storage path | High |
 | RAG-TD-1 | No reranker and no weak-retrieval refusal | Medium |
 | RAG-TD-4 | Old versions with changed text stay searchable | Medium |
 | RAG-TD-5 | Synchronous parsing blocks the event loop | Medium |
@@ -23,22 +21,6 @@ Severity levels are defined in [architecture/tech-debt.md](../../architecture/te
 Retrieval is RRF with no reranker. `/answer` refuses only when zero documents come back, which almost never happens because vector search always returns neighbors. Off-topic questions get loosely related context and rely on the prompt to say "I don't know". The root README lists reranking and a refusal threshold as features.
 
 **Fix:** add a reranker (cross-encoder or an API reranker) over the fused top 20–50 and refuse below a calibrated rerank score. Measure with `/evals/run` plus unanswerable golden cases.
-
-### RAG-TD-2. URL ingest can fetch internal addresses (SSRF)
-
-**Severity:** High.
-
-`_download` in `ingest.py` follows redirects to any host. A URL like `http://169.254.169.254/...` or `http://localhost:8000/...` is fetched from inside the network and its response is ingested and searchable.
-
-**Fix:** allow only `http(s)`, resolve the host and reject private, loopback, and link-local ranges, and re-check on every redirect.
-
-### RAG-TD-3. Upload filename is not sanitized before building the storage path
-
-**Severity:** High.
-
-`reserve_document` builds `uploads/<slug>/v<n>/<filename>` with the client-supplied `filename` (api passes Multer's `originalname`). A name containing `../` resolves outside `docs/uploads`, and api then writes the upload there.
-
-**Fix:** reduce `filename` to a safe basename (strip separators and `..`, limit characters), and assert the resolved path is under `uploads_path`.
 
 ### RAG-TD-4. Old versions with changed text stay searchable
 

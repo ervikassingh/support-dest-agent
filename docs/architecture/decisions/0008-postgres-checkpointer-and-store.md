@@ -25,4 +25,4 @@ A refund approval can wait hours or days, across agent restarts. The agent also 
 - No reconnect: if Postgres starts after the agent, the agent must be restarted ([AGENT-TD-9](../../services/agent/tech-debt.md)).
 - Eval runs (`POST /evals/run`) write checkpoints into the same tables as real traffic, under `eval-*` thread ids.
 - Threads are never pruned.
-- Notes for requests with no customer id all land under the key `unknown` ([AGENT-TD-3](../../services/agent/tech-debt.md)).
+- Notes are not written when the customer id is unknown.

@@ -64,4 +64,4 @@ System-wide decisions are in [architecture/decisions](../../architecture/decisio
 
 **Alternatives.** Headless browser rendering; crawling.
 
-**Consequences.** No browser dependency. JavaScript-rendered pages ingest as near-empty HTML. No restriction on target hosts ([RAG-TD-2](tech-debt.md)).
+**Consequences.** No browser dependency. JavaScript-rendered pages ingest as near-empty HTML. Fetches allow only `http(s)` and refuse hosts that resolve to a non-public address, including each redirect. The resolved address is not pinned for the connection.

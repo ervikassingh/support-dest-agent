@@ -25,7 +25,7 @@ Labels:
 - email: wants an email sent (confirmation, receipt, written summary)
 - out_of_scope: unrelated to this store's support
 
-Extract ORD-#### order ids and CUST-# customer ids when present."""
+Extract ORD-#### order ids and CUS-# or CUS-GUEST customer ids when present."""
 
 
 def _heuristic(text: str) -> Intent:
@@ -43,13 +43,24 @@ def _heuristic(text: str) -> Intent:
     return "policy"
 
 
-def _extract_ids(text: str) -> tuple[str | None, str | None]:
-    order = re.search(r"ORD-\d+", text, re.I)
-    customer = re.search(r"CUST-\d+", text, re.I)
-    return (
-        order.group(0).upper() if order else None,
-        customer.group(0).upper() if customer else None,
-    )
+def normalize_order_id(value: Any) -> str:
+    if value is None:
+        return ""
+    match = re.search(r"ORD-\d+", str(value), re.I)
+    return match.group(0).upper() if match else ""
+
+
+def normalize_customer_id(value: Any) -> str:
+    """MCP ids are CUS-1 and CUS-GUEST. Accept the old CUST- prefix too."""
+    if value is None:
+        return ""
+    text = re.sub(r"\bCUST-", "CUS-", str(value), flags=re.I)
+    match = re.search(r"CUS-(?:GUEST|\d+)", text, re.I)
+    return match.group(0).upper() if match else ""
+
+
+def _extract_ids(text: str) -> tuple[str, str]:
+    return normalize_order_id(text), normalize_customer_id(text)
 
 
 async def classify_intent(messages: list[Any]) -> dict[str, Any]:
@@ -83,13 +94,13 @@ async def classify_intent(messages: list[Any]) -> dict[str, Any]:
             intent = _heuristic(last_user)
         return {
             "intent": intent,
-            "order_id": data.get("order_id") or order_id or "",
-            "customer_id": data.get("customer_id") or customer_id or "",
+            "order_id": normalize_order_id(data.get("order_id")) or order_id,
+            "customer_id": normalize_customer_id(data.get("customer_id")) or customer_id,
         }
     except Exception as exc:  # noqa: BLE001
         logger.warning("Intent LLM failed (%s); using heuristics", exc)
         return {
             "intent": _heuristic(last_user),
-            "order_id": order_id or "",
-            "customer_id": customer_id or "",
+            "order_id": order_id,
+            "customer_id": customer_id,
         }

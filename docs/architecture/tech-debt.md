@@ -13,7 +13,6 @@ Severity:
 | ID | Item | Severity |
 | --- | --- | --- |
 | [X-TD-1](#x-td-1-no-authentication-or-authorization-anywhere) | No authentication or authorization anywhere | High |
-| [X-TD-2](#x-td-2-customer-id-format-disagrees-between-agent-and-mcp-server) | Customer id format disagrees between agent and mcp-server | High |
 | [X-TD-3](#x-td-3-no-ci-and-thin-test-coverage) | No CI and thin test coverage | Medium |
 | [X-TD-4](#x-td-4-no-shared-contracts-between-services) | No shared contracts between services | Medium |
 | [X-TD-5](#x-td-5-root-readme-has-drifted-from-the-code) | Root README has drifted from the code | Medium |
@@ -39,14 +38,6 @@ No service checks who is calling. Concretely:
 The chat service comment mentions "auth/session stubs", but none exist.
 
 **Fix:** sessions in api (cookie or JWT), with a customer role for `/chat` and an operator role for `/approvals` and `/documents`. Bind internal services to localhost or a private network and require a shared service token between api, agent, rag, and mcp-server. Bind each thread to the session that created it.
-
-### X-TD-2. Customer id format disagrees between agent and mcp-server
-
-**Severity:** High. **Services:** agent, mcp-server.
-
-mcp-server ids are `CUS-1`, `CUS-2`, `CUS-GUEST` (`apps/mcp-server/src/data.ts`). The agent's router prompt and regex extract `CUST-\d+` (`agent/routing/intent.py`), and the tool schema example says `CUST-1`. So `customer_id` is almost never extracted from a message. Refund notes then fall into the shared `unknown` key ([AGENT-TD-3](../services/agent/tech-debt.md)).
-
-**Fix:** pick one format, ideally derive `customer_id` from `get_order` instead of from free text, and add a routing eval case with a customer id.
 
 ### X-TD-3. No CI and thin test coverage
 

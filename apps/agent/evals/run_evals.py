@@ -91,7 +91,7 @@ async def main() -> int:
         from langsmith import Client
 
         client = Client()
-        ds_name = "support-desk-agent-v1"
+        ds_name = "support-agent-v1"
         dataset_id = None
         for ds in client.list_datasets(dataset_name=ds_name):
             dataset_id = ds.id

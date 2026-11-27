@@ -15,7 +15,7 @@ class OrderIdInput(BaseModel):
 
 
 class CustomerIdInput(BaseModel):
-    customer_id: str = Field(description="Customer id, e.g. CUST-1")
+    customer_id: str = Field(description="Customer id, e.g. CUS-1 or CUS-GUEST")
 
 
 async def _get_order(order_id: str) -> str:

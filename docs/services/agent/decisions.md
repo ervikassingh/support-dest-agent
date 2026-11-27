@@ -48,7 +48,7 @@ System-wide decisions are in [architecture/decisions](../../architecture/decisio
 
 **Decision.** `MAX_STEPS = 8` main-model calls per turn, checked in `after_main`.
 
-**Consequences.** Bounds cost and runaway loops. Hitting the limit does not escalate or explain itself ([AGENT-TD-2](tech-debt.md)).
+**Consequences.** Bounds cost and runaway loops. At the limit the graph closes the open tool calls and tells the customer a person can take over. It does not call `escalate_to_human` ([AGENT-TD-11](tech-debt.md)).
 
 ## AGENT-7. Summarize instead of truncating
 
@@ -60,4 +60,4 @@ System-wide decisions are in [architecture/decisions](../../architecture/decisio
 
 **Decision.** Every refund decision appends `{event, order_id, amount?, approval_id?, result?, operator_note}` under `("refunds", "operator") / customer_id`, keeping the last 50. Notes are loaded into the next draft for that customer.
 
-**Consequences.** Operators see history across threads. Keyed by a customer id that is often missing ([AGENT-TD-3](tech-debt.md)).
+**Consequences.** Operators see history across threads. Notes are skipped when the customer id is missing. The id comes from the message (`CUS-#` or `CUS-GUEST`) or from `get_order`.

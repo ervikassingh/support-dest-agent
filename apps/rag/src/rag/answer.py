@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
+from langsmith import traceable
 
 from rag.retrieve import retrieve
 from rag.settings import get_settings
@@ -146,6 +147,7 @@ async def answer_events(question: str, top_k: int = 5) -> AsyncIterator[dict[str
     }
 
 
+@traceable(name="rag.answer", run_type="chain")
 async def answer(question: str, top_k: int = 5) -> dict[str, Any]:
     final: dict[str, Any] = {}
     async for event in answer_events(question, top_k=top_k):

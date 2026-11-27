@@ -1,14 +1,10 @@
 # agent tech debt
 
-Severity levels are defined in [architecture/tech-debt.md](../../architecture/tech-debt.md). The customer id format mismatch with mcp-server is [X-TD-2](../../architecture/tech-debt.md#x-td-2-customer-id-format-disagrees-between-agent-and-mcp-server).
+Severity levels are defined in [architecture/tech-debt.md](../../architecture/tech-debt.md).
 
 | ID | Item | Severity |
 | --- | --- | --- |
-| AGENT-TD-1 | Refund draft falls back to a hard-coded order and amount | High |
-| AGENT-TD-2 | Hitting the step limit leaves a dangling tool call and a stale reply | High |
-| AGENT-TD-3 | Operator notes for unknown customers share one bucket | High |
-| AGENT-TD-4 | Refund is drafted even when the order is ineligible | Medium |
-| AGENT-TD-5 | `approval_id` is minted by the agent, not by the approver | Medium |
+| AGENT-TD-5 | `approval_id` is signed by the agent, not tied to an operator | Medium |
 | AGENT-TD-6 | Email recipient and body are hard-coded | Medium |
 | AGENT-TD-7 | No weak-retrieval refusal; citations not returned | Medium |
 | AGENT-TD-8 | Router sees only the last message | Medium |
@@ -19,45 +15,13 @@ Severity levels are defined in [architecture/tech-debt.md](../../architecture/te
 | AGENT-TD-13 | Evals share production checkpoint tables | Low |
 | AGENT-TD-14 | Small inefficiencies and misleading health output | Low |
 
-### AGENT-TD-1. Refund draft falls back to a hard-coded order and amount
-
-**Severity:** High.
-
-`draft_refund` in `graph/nodes/refund.py` uses `order_id = state.get("order_id") or "ORD-1001"` and `amount = 49.99` when eligibility returns no max or an error. "I want a refund" with no order id drafts a refund for ORD-1001 and sends it to the operator.
-
-**Fix:** if there is no order id, ask for one and end the turn. If eligibility errors, tell the operator and do not propose an amount.
-
-### AGENT-TD-2. Hitting the step limit leaves a dangling tool call and a stale reply
-
-**Severity:** High.
-
-When `after_main` stops at 8 steps, the last `AIMessage` still has `tool_calls` with no matching `ToolMessage`, and `final_reply` is not updated. `/chat` then returns whatever `final_reply` was from an earlier turn (state persists across turns). On the next turn the provider can reject the history because a tool call has no result.
-
-**Fix:** on limit, append `ToolMessage`s that say the limit was reached (or drop the pending call), set a clear `final_reply` that offers a human, and clear `final_reply` at the start of every turn.
-
-### AGENT-TD-3. Operator notes for unknown customers share one bucket
-
-**Severity:** High.
-
-`read_refund_memory` and `append_refund_memory` use `customer_id or "unknown"`. Because customer ids are rarely extracted ([X-TD-2](../../architecture/tech-debt.md#x-td-2-customer-id-format-disagrees-between-agent-and-mcp-server)), most refund notes from every customer go into `unknown`, and are loaded into every later anonymous draft. That mixes customers' data in front of operators and skews decisions.
-
-**Fix:** derive `customer_id` from `get_order` during drafting. Skip memory reads and writes when it is unknown.
-
-### AGENT-TD-4. Refund is drafted even when the order is ineligible
+### AGENT-TD-5. `approval_id` is signed by the agent, not tied to an operator
 
 **Severity:** Medium.
 
-`draft_refund` does not check `eligibility["eligible"]`. An already-refunded or in-transit order still interrupts for approval with `amount = 0` (or the fallback), and MCP rejects it only after the operator approves.
+`issue_refund_node` signs `order_id` and the amount with `APPROVAL_SECRET`, and MCP checks that signature. A random string is refused. The signature still says nothing about which operator approved, and there is no approval record ([MCP-TD-1](../mcp-server/tech-debt.md)).
 
-**Fix:** when ineligible, reply with the reason and offer escalation; do not interrupt.
-
-### AGENT-TD-5. `approval_id` is minted by the agent, not by the approver
-
-**Severity:** Medium.
-
-`issue_refund_node` creates `APR-<hex>` right before calling MCP. It proves the node ran, not who approved. There is no approval record, no operator identity, and nothing MCP can verify ([MCP-TD-1](../mcp-server/tech-debt.md)).
-
-**Fix:** api creates an approval record (operator id, decision, amount, timestamp) and passes its id through resume. MCP verifies it.
+**Fix:** api creates an approval record (operator id, decision, amount, timestamp) and passes its id through resume. MCP verifies that record.
 
 ### AGENT-TD-6. Email recipient and body are hard-coded
 

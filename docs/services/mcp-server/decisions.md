@@ -20,9 +20,9 @@ System-wide decisions are in [architecture/decisions](../../architecture/decisio
 
 **Context.** The agent already gates refunds behind a human ([ADR 0007](../../architecture/decisions/0007-write-tools-gated-by-interrupt.md)). The server should not trust any single client.
 
-**Decision.** `issue_refund` refuses without a non-blank `approval_id`, and re-runs `check_refund_eligibility` and the `0 < amount ≤ max_amount` bound itself.
+**Decision.** `issue_refund` accepts `approval_id` only when it is the HMAC of the order id and the amount in cents, and it re-runs `check_refund_eligibility` and the `0 < amount ≤ max_amount` bound itself.
 
-**Consequences.** A buggy client cannot over-refund or refund an ineligible order. A client that invents an `approval_id` can still refund an eligible order ([MCP-TD-1](tech-debt.md)).
+**Consequences.** A buggy client cannot over-refund, refund an ineligible order, or pass an invented `approval_id`. MCP recomputes the HMAC of the order id and the amount. The default secret is still in source ([MCP-TD-1](tech-debt.md)).
 
 ## MCP-4. Strict zod input schemas
 

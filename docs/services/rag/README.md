@@ -75,7 +75,7 @@ Files live under `UPLOADS_DIR` (default `docs/uploads`) as `<slug>/v<version>/<f
 | `CHUNK_TOKENS`, `CHUNK_OVERLAP` | `800`, `100` |
 | `CANDIDATE_K`, `RRF_K` | `50`, `60` (not in `.env.example`) |
 | `CHAT_INPUT_USD_PER_MILLION`, `CHAT_OUTPUT_USD_PER_MILLION`, `EMBEDDING_USD_PER_MILLION` | unset |
-| `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | —, `support-desk-rag` |
+| `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | —, `support-rag` |
 | `WORKER_ENABLED` | `true` |
 
 ## Dependencies

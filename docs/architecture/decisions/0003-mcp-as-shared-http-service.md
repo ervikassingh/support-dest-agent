@@ -22,5 +22,5 @@ The agent needs order, customer, and refund tools. Other agents should be able t
 ## Consequences
 
 - Tool data is shared across all clients because it lives at module scope in the server process.
-- The read/write split is by convention and by the `approval_id` check, not by transport-level scopes or auth. Any client that can reach `/mcp` can call `issue_refund` with any non-empty string ([MCP-TD-1](../../services/mcp-server/tech-debt.md)).
+- `issue_refund` checks an HMAC of the order id and amount (`APPROVAL_SECRET`), not an operator record. With the default secret, anyone who can read the repo and reach `/mcp` can still sign one ([MCP-TD-1](../../services/mcp-server/tech-debt.md)).
 - The agent duplicates each tool's name, description, and schema in `agent/tools/mcp/adapters.py` instead of discovering them via `list_tools`, so the two can drift.

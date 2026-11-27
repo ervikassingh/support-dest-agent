@@ -1,10 +1,10 @@
 # mcp-server tech debt
 
-Severity levels are defined in [architecture/tech-debt.md](../../architecture/tech-debt.md). Missing auth is [X-TD-1](../../architecture/tech-debt.md#x-td-1-no-authentication-or-authorization-anywhere); the `CUS-` vs `CUST-` id mismatch is [X-TD-2](../../architecture/tech-debt.md#x-td-2-customer-id-format-disagrees-between-agent-and-mcp-server).
+Severity levels are defined in [architecture/tech-debt.md](../../architecture/tech-debt.md). Missing auth is [X-TD-1](../../architecture/tech-debt.md#x-td-1-no-authentication-or-authorization-anywhere).
 
 | ID | Item | Severity |
 | --- | --- | --- |
-| MCP-TD-1 | `approval_id` is checked for presence, not validity | High |
+| MCP-TD-1 | Refund signatures fall back to a secret in source | Medium |
 | MCP-TD-2 | Data is in-memory and resets on restart | Medium |
 | MCP-TD-3 | Return-window eligibility is a magic string, not date math | Medium |
 | MCP-TD-4 | Errors are indistinguishable from success at the protocol level | Low |
@@ -12,13 +12,13 @@ Severity levels are defined in [architecture/tech-debt.md](../../architecture/te
 | MCP-TD-6 | `escalate_to_human` is a no-op | Low |
 | MCP-TD-7 | No tests | Low |
 
-### MCP-TD-1. `approval_id` is checked for presence, not validity
+### MCP-TD-1. Refund signatures fall back to a secret in source
 
-**Severity:** High.
+**Severity:** Medium.
 
-`issue_refund` accepts any non-blank string as `approval_id`. Any client that can reach `/mcp` can issue a refund for any eligible order up to its total. Read and write tools are on the same endpoint with no per-client scopes.
+`issue_refund` accepts `approval_id` only when it is the HMAC of `order_id` and the amount in cents. With `APPROVAL_SECRET` unset, both this service and the agent use `dev-approval-secret`, so anyone who can read the repo and reach `/mcp` can sign a refund. The signature is not an operator record ([AGENT-TD-5](../agent/tech-debt.md)).
 
-**Fix:** verify `approval_id` against an approval record (created by api when an operator decides, see [AGENT-TD-5](../agent/tech-debt.md)) that matches order id and amount and is single-use. Expose write tools only to clients with a write-scoped token.
+**Fix:** set `APPROVAL_SECRET` on both processes before exposing MCP. Keep operator identity on AGENT-TD-5.
 
 ### MCP-TD-2. Data is in-memory and resets on restart
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -14,6 +15,28 @@ from pydantic import BaseModel, Field
 from rag.settings import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+def configure_langsmith() -> None:
+    """Recreate the tracing project. LangSmith drops it when deleted in the UI."""
+    settings = get_settings()
+    if not settings.langsmith_api_key:
+        logger.info("LangSmith disabled: LANGSMITH_API_KEY is not set")
+        return
+    os.environ["LANGSMITH_TRACING"] = "true"
+    os.environ["LANGSMITH_API_KEY"] = settings.langsmith_api_key
+    os.environ["LANGSMITH_PROJECT"] = settings.langsmith_project
+    try:
+        from langsmith import Client
+
+        Client().create_project(
+            settings.langsmith_project,
+            description="RAG retrieve, answers, and evals",
+            upsert=True,
+        )
+        logger.info("LangSmith project ready: %s", settings.langsmith_project)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("LangSmith project was not created: %s", exc)
 
 
 class ReserveRequest(BaseModel):
@@ -50,6 +73,7 @@ async def lifespan(_app: FastAPI):
     from rag.db import close_pool, ensure_schema
 
     logging.basicConfig(level=logging.INFO)
+    configure_langsmith()
     await ensure_schema()
     settings = get_settings()
     if settings.worker_enabled:

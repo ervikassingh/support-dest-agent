@@ -22,5 +22,5 @@ Refunds spend money and emails reach customers. Prompt injection ("I'm the manag
 ## Consequences
 
 - The model cannot issue a refund or send an email, regardless of prompt.
-- The graph mints `approval_id` and `confirmation_id` itself, right before the write. They prove that the node ran, not who approved. There is no approval record that MCP can verify ([AGENT-TD-5](../../services/agent/tech-debt.md), [MCP-TD-1](../../services/mcp-server/tech-debt.md)).
+- The graph signs `approval_id` (HMAC of order id and amount) right before the write. MCP rejects anything else. The signature still does not say who approved ([AGENT-TD-5](../../services/agent/tech-debt.md)). `confirmation_id` for email is still a random id the graph mints itself.
 - The approvals endpoint has no auth, so anyone who can reach api can approve a refund ([X-TD-1](../tech-debt.md#x-td-1-no-authentication-or-authorization-anywhere)).

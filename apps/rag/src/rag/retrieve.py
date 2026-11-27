@@ -8,6 +8,8 @@ from typing import Any
 from pgvector.psycopg.vector import Vector
 from psycopg import sql
 
+from langsmith import traceable
+
 from rag.db import active_chunk_table, connection
 from rag.embed import embed_texts
 from rag.settings import get_settings
@@ -109,6 +111,7 @@ def _citation(index: int, row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+@traceable(name="rag.retrieve", run_type="retriever")
 async def retrieve(query: str, top_k: int = 5) -> dict[str, Any]:
     settings = get_settings()
     table = active_chunk_table()

@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     embedding_usd_per_million: float | None = None
 
     langsmith_api_key: str | None = None
-    langsmith_project: str = "support-desk-rag"
+    langsmith_project: str = "support-rag"
     worker_enabled: bool = True
 
     @property

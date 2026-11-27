@@ -1,5 +1,5 @@
 {
-  "name": "support-desk-agent",
+  "name": "support-agent",
   "private": true,
   "packageManager": "pnpm@10.17.1",
   "engines": {

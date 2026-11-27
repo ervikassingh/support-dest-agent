@@ -138,7 +138,7 @@ def _langsmith(cases: list[dict], rows: list[dict]) -> dict[str, Any]:
         from langsmith import Client
 
         client = Client()
-        name = "support-desk-rag-golden"
+        name = "support-rag-golden"
         existing = list(client.list_datasets(dataset_name=name))
         dataset = existing[0] if existing else client.create_dataset(dataset_name=name, description="RAG golden set")
         if not existing:

@@ -9,6 +9,7 @@
 import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod/v4";
+import { approvalMatches } from "./approval.js";
 import {
   checkRefundEligibility,
   getCustomer,
@@ -99,9 +100,9 @@ export function createSupportDeskMcpServer() {
       }),
     },
     async ({ order_id, amount, approval_id, reason }) => {
-      if (!approval_id?.trim()) {
+      if (!approvalMatches(order_id, amount, approval_id)) {
         return err(
-          "issue_refund refused: missing approval_id. Human approval context is required before this write tool may run.",
+          "issue_refund refused: approval_id is missing or does not match this order and amount.",
         );
       }
 

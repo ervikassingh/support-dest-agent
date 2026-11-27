@@ -60,7 +60,7 @@ class MemoryBundle:
 
 
 async def read_refund_memory(store: AsyncPostgresStore, customer_id: str) -> list[dict[str, Any]]:
-    if not customer_id:
+    if not customer_id or customer_id == "unknown":
         return []
     item = await store.aget(REFUND_NAMESPACE, customer_id)
     if item is None:
@@ -75,8 +75,8 @@ async def append_refund_memory(
     customer_id: str,
     note: dict[str, Any],
 ) -> None:
-    if not customer_id:
-        customer_id = "unknown"
+    if not customer_id or customer_id == "unknown":
+        return
     existing = await read_refund_memory(store, customer_id)
     existing.append(note)
     await store.aput(

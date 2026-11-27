@@ -18,10 +18,13 @@ flowchart TD
   prepare --> main["main_agent · MAIN_MODEL"]
   main -->|tool calls and step_count < 8| tools["tools (ToolNode)<br/>get_order, get_shipping_status,<br/>check_refund_eligibility, get_customer"]
   tools --> main
-  main -->|no tool calls, or limit hit| respond
+  main -->|step limit with tool calls still open| stop["stop_tool_loop<br/>close tool calls, ask for a person"]
+  stop --> respond
+  main -->|no tool calls| respond
 
   loadMem --> draftRefund["draft_refund<br/>MCP check_refund_eligibility"]
-  draftRefund --> awaitRefund["await_refund_approval<br/>interrupt type=refund_approval"]
+  draftRefund -->|no order, error, or ineligible| respond
+  draftRefund -->|eligible| awaitRefund["await_refund_approval<br/>interrupt type=refund_approval"]
   awaitRefund --> issue["issue_refund<br/>MCP issue_refund or skip on reject<br/>append PostgresStore note"]
   issue --> respond
 
@@ -67,7 +70,8 @@ sequenceDiagram
   participant M as mcp-server
   participant O as Operator (/threads/:id/resume)
   C->>G: "refund ORD-1001"
-  G->>S: read notes[customer_id or 'unknown']
+  G->>M: get_order, if the message has no customer id
+  G->>S: read notes for that customer (skip if unknown)
   G->>M: check_refund_eligibility(order_id)
   G->>G: draft {order_id, amount = max_amount, reason, eligibility, notes}
   G-->>C: "Refund draft ready ... paused for operator approval"
@@ -79,14 +83,16 @@ sequenceDiagram
     G->>S: append refund_rejected
     G-->>O: "Refund request rejected by operator."
   else approve or edit
-    G->>G: approval_id = APR-hex
+    G->>G: approval_id = HMAC(order_id, amount)
     G->>M: issue_refund(order_id, amount, approval_id, reason)
     G->>S: append refund_issued or refund_failed
     G-->>O: "Refund issued ..." or "Could not issue refund: ..."
   end
 ```
 
-`edit` uses the operator's `amount`; `approve` uses the drafted amount. MCP enforces `0 < amount ≤ max_amount` and eligibility again.
+`edit` uses the operator's `amount`; `approve` uses the drafted amount. MCP checks the HMAC, then enforces `0 < amount ≤ max_amount` and eligibility again.
+
+No order id, an eligibility error, or an ineligible order ends the turn with an explanation. Those paths do not interrupt.
 
 ## Email branch
 
@@ -100,7 +106,7 @@ sequenceDiagram
 - `prepare_main` resets `step_count` to 0. For `policy`, it sends the last human message to rag `POST /retrieve` (`top_k=5`) and stores each chunk's `embed_text` plus a metadata line in `documents`.
 - `main_agent` puts the documents into the system prompt, binds the four read tools, and calls `MAIN_MODEL`. If the response has no tool calls it becomes `final_reply`.
 - `ToolNode` runs the tool calls. Each MCP call opens its own Streamable HTTP session.
-- `after_main` loops back while there are tool calls and `step_count < 8`.
+- `after_main` loops back while there are tool calls and `step_count < 8`. At the limit, `stop_tool_loop` writes a `ToolMessage` for each open call and sets the reply. Each turn also clears `final_reply` in the router so an older reply cannot leak through.
 
 ## Summarization
 

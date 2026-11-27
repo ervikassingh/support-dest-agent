@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 
 from agent.clients import rag_retrieve
 from agent.graph.state import AgentState
@@ -69,11 +69,28 @@ async def main_agent(state: AgentState) -> dict[str, Any]:
     return updates
 
 
-def after_main(state: AgentState) -> Literal["tools", "respond"]:
+def after_main(state: AgentState) -> Literal["tools", "stop", "respond"]:
     messages = state.get("messages") or []
     if not messages:
         return "respond"
     last = messages[-1]
-    if isinstance(last, AIMessage) and last.tool_calls and int(state.get("step_count") or 0) < MAX_STEPS:
-        return "tools"
+    if isinstance(last, AIMessage) and last.tool_calls:
+        if int(state.get("step_count") or 0) < MAX_STEPS:
+            return "tools"
+        return "stop"
     return "respond"
+
+
+async def stop_tool_loop(state: AgentState) -> dict[str, Any]:
+    """Close unanswered tool calls so the next turn is a valid message list."""
+    last = (state.get("messages") or [])[-1]
+    calls = getattr(last, "tool_calls", None) or []
+    notes = [
+        ToolMessage(
+            content="Stopped: the tool step limit was reached.",
+            tool_call_id=str(call.get("id") or index),
+        )
+        for index, call in enumerate(calls)
+    ]
+    text = "I couldn't finish that lookup within the step limit. A person can take it from here."
+    return {"messages": notes, "final_reply": text}

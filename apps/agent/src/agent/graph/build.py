@@ -9,8 +9,9 @@ from langgraph.prebuilt import ToolNode
 
 from agent.graph.nodes.cheap import cheap_agent
 from agent.graph.nodes.email import await_email_confirm, draft_email, send_email_node
-from agent.graph.nodes.main_agent import after_main, main_agent, prepare_main
+from agent.graph.nodes.main_agent import after_main, main_agent, prepare_main, stop_tool_loop
 from agent.graph.nodes.refund import (
+    after_draft,
     await_refund_approval,
     draft_refund,
     issue_refund_node,
@@ -40,6 +41,7 @@ def build_graph(*, checkpointer: Any, store: Any):
     builder.add_node("prepare_main", prepare_main)
     builder.add_node("main_agent", main_agent)
     builder.add_node("tools", ToolNode(get_main_agent_tools()))
+    builder.add_node("stop_tool_loop", stop_tool_loop)
     builder.add_node("load_refund_memory", load_memory)
     builder.add_node("draft_refund", draft_refund)
     builder.add_node("await_refund_approval", await_refund_approval)
@@ -66,11 +68,16 @@ def build_graph(*, checkpointer: Any, store: Any):
     builder.add_conditional_edges(
         "main_agent",
         after_main,
-        {"tools": "tools", "respond": "respond"},
+        {"tools": "tools", "stop": "stop_tool_loop", "respond": "respond"},
     )
     builder.add_edge("tools", "main_agent")
+    builder.add_edge("stop_tool_loop", "respond")
     builder.add_edge("load_refund_memory", "draft_refund")
-    builder.add_edge("draft_refund", "await_refund_approval")
+    builder.add_conditional_edges(
+        "draft_refund",
+        after_draft,
+        {"await_refund_approval": "await_refund_approval", "respond": "respond"},
+    )
     builder.add_edge("await_refund_approval", "issue_refund")
     builder.add_edge("issue_refund", "respond")
     builder.add_edge("draft_email", "await_email_confirm")
