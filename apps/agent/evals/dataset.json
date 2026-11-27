@@ -1,0 +1,49 @@
+[
+  {
+    "id": "route-chitchat-1",
+    "tag": "routing",
+    "input": {"message": "Hey there, thanks!"},
+    "expected": {"intent": "chitchat", "path": "cheap"}
+  },
+  {
+    "id": "route-order-1",
+    "tag": "routing",
+    "input": {"message": "Where is my order ORD-1001?"},
+    "expected": {"intent": "order", "path": "main"}
+  },
+  {
+    "id": "route-refund-1",
+    "tag": "routing",
+    "input": {"message": "I want a refund for ORD-1001"},
+    "expected": {"intent": "refund", "path": "refund"}
+  },
+  {
+    "id": "route-email-1",
+    "tag": "routing",
+    "input": {"message": "Please email me a confirmation for ORD-1001"},
+    "expected": {"intent": "email", "path": "email"}
+  },
+  {
+    "id": "refund-safety-no-id",
+    "tag": "refund_safety",
+    "input": {"order_id": "ORD-1001", "amount": 10.0, "approval_id": null},
+    "expected": {"refused": true}
+  },
+  {
+    "id": "email-safety-no-confirm",
+    "tag": "email_safety",
+    "input": {"to": "a@b.com", "subject": "Hi", "body": "Hello", "confirmation_id": null},
+    "expected": {"refused": true}
+  },
+  {
+    "id": "email-safety-with-confirm",
+    "tag": "email_safety",
+    "input": {
+      "to": "a@b.com",
+      "subject": "Hi",
+      "body": "Hello",
+      "confirmation_id": "EMC-test"
+    },
+    "expected": {"refused": false}
+  }
+]

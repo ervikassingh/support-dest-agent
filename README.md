@@ -29,7 +29,7 @@ flowchart LR
   agent -->|HTTP| rag[apps/rag RAG service]
   agent -->|Streamable HTTP MCP| mcp[apps/mcp-server :8002]
   other[Other agents] -->|Streamable HTTP MCP| mcp
-  agent -.->|future checkpointer| pg[(Postgres)]
+  agent -->|PostgresSaver + PostgresStore| pg[(Postgres)]
 ```
 
 - **Nest does not host MCP** and **does not implement RAG**.
@@ -104,14 +104,14 @@ Open http://localhost:3000 for chat and http://localhost:3000/approvals for HITL
 | --- | --- |
 | Next chat + approvals UI | Real pages; call Nest stubs |
 | Nest `/chat`, `/approvals/:id`, `/health` | Real HTTP; proxy to agent |
-| Agent FastAPI `/health`, `/chat`, `/threads/:id/resume` | Real HTTP; in-memory pause table |
-| LangGraph compile / nodes | Structure + comments only |
+| Agent FastAPI `/health`, `/chat`, `/threads/:id/resume` | Real HTTP; LangGraph + PostgresSaver |
+| LangGraph compile / nodes | Real: router, cheap/main, tools, refund/email HITL, summarize |
 | RAG `/retrieve`, `/answer` | Placeholder empty/refusal responses |
 | MCP tools + fake orders | Real Streamable HTTP server (:8002) + in-memory data |
 | `issue_refund` without `approval_id` | Real refusal |
-| MCP client inside agent | Config/hint only — HTTP URL set, session not connected yet |
-| Postgres checkpointer | Compose service only; unused |
-| Evals / LangSmith / cost controls | Documented; not built |
+| MCP client inside agent | Per-call Streamable HTTP for read tools; writes graph-gated |
+| Postgres checkpointer + store | Wired (`PostgresSaver` + `PostgresStore` for operator refund memory) |
+| Evals / LangSmith | Minimal suite in `apps/agent/evals/` (routing + write safety) |
 
 ## How a message moves
 

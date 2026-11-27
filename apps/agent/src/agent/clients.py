@@ -1,4 +1,4 @@
-"""Outbound clients: RAG over HTTP, MCP over Streamable HTTP (client stub)."""
+"""Outbound clients: RAG over HTTP, MCP connection hint."""
 
 from __future__ import annotations
 
@@ -31,10 +31,10 @@ async def rag_answer(question: str) -> dict[str, Any]:
 
 
 def mcp_connection_hint() -> dict[str, Any]:
-    """Document the shared MCP HTTP endpoint. Client session not wired yet."""
+    """Document the shared MCP HTTP endpoint used by tool adapters."""
     return {
         "transport": "streamable-http",
         "url": settings.mcp_url,
-        "connected": False,
-        "note": "MCP HTTP client session is stubbed; tools are not invoked yet.",
+        "connected": True,
+        "note": "Read tools call MCP per invocation; write tools are graph-gated.",
     }
