@@ -1,0 +1,26 @@
+[
+  {
+    "id": "order-lookup",
+    "message": "Look up order ORD-1001.",
+    "expect_tool": "get_order",
+    "expect_args": { "order_id": "ORD-1001" }
+  },
+  {
+    "id": "shipping-status",
+    "message": "What is the shipping status of order ORD-1002?",
+    "expect_tool": "get_shipping_status",
+    "expect_args": { "order_id": "ORD-1002" }
+  },
+  {
+    "id": "refund-eligibility",
+    "message": "Is order ORD-1001 eligible for a refund? Check eligibility only.",
+    "expect_tool": "check_refund_eligibility",
+    "expect_args": { "order_id": "ORD-1001" }
+  },
+  {
+    "id": "customer-lookup",
+    "message": "Look up customer CUS-1.",
+    "expect_tool": "get_customer",
+    "expect_args": { "customer_id": "CUS-1" }
+  }
+]
