@@ -16,4 +16,4 @@ poetry run rag-reindex        # after EMBEDDING_MODEL or EMBEDDING_DIM changes
 poetry run rag-golden         # review copy at evals/golden.generated.json
 ```
 
-See `docs/rag/pipeline.md`.
+See `docs/services/rag/` for the pipeline, decisions, and tech debt.

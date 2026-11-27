@@ -45,3 +45,5 @@ poetry run uvicorn agent.main:app --reload --port 8000
 ```bash
 poetry run python evals/run_evals.py
 ```
+
+See `docs/services/agent/` for the graph flow, decisions, and tech debt.

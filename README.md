@@ -4,6 +4,8 @@ A customer support agent for a fictional store. It answers policy questions from
 
 This repo is a **Turborepo + Poetry monorepo skeleton**. Python is used only where LangChain / LangGraph / LangSmith help (`agent`, `rag`). Nest, Next, and the MCP tool server are TypeScript. Full LangGraph routing, real RAG, durable HITL, and evals are not implemented yet.
 
+Engineering docs (architecture, per-service flows, decisions, and tech debt) are in [`docs/`](docs/README.md). Where this README and `docs/` disagree, `docs/` reflects the current code.
+
 ## Monorepo layout
 
 ```

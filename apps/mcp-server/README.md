@@ -28,3 +28,5 @@ pnpm dev:mcp
 | `escalate_to_human` | write | |
 
 Stub orders live in `src/data.ts` (shared process memory).
+
+See `docs/services/mcp-server/` for tool flows, decisions, and tech debt.
