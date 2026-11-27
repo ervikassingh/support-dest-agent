@@ -1,0 +1,13 @@
+# Shipping
+
+## Standard
+
+Standard shipping takes 5 to 7 business days.
+
+## Express
+
+Express shipping takes 2 business days and is unavailable for P.O. boxes.
+
+## Free shipping
+
+Orders over $50 ship free with standard shipping.

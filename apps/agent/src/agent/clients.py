@@ -12,22 +12,17 @@ from agent.settings import settings
 logger = logging.getLogger(__name__)
 
 
-async def rag_answer(question: str) -> dict[str, Any]:
-    """Call the RAG service. Failures return a soft stub so chat still works."""
-    url = f"{settings.rag_url.rstrip('/')}/answer"
+async def rag_retrieve(query: str, top_k: int = 5) -> dict[str, Any]:
+    """Fetch policy chunks. Failures leave the agent with empty context."""
+    url = f"{settings.rag_url.rstrip('/')}/retrieve"
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            res = await client.post(url, json={"question": question})
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            res = await client.post(url, json={"query": query, "top_k": top_k})
             res.raise_for_status()
             return res.json()
-    except Exception as exc:  # noqa: BLE001 - stub path
-        logger.warning("RAG call failed (%s): %s", url, exc)
-        return {
-            "answer": None,
-            "citations": [],
-            "error": str(exc),
-            "stub": True,
-        }
+    except Exception as exc:  # noqa: BLE001 - chat still answers without policy context
+        logger.warning("RAG retrieve failed (%s): %s", url, exc)
+        return {"query": query, "documents": [], "citations": [], "error": str(exc)}
 
 
 def mcp_connection_hint() -> dict[str, Any]:

@@ -47,3 +47,7 @@ coverage/
 
 # Docker
 postgres-data/
+
+# Ingested uploads (seed corpus under docs/seed is tracked)
+docs/uploads/**
+!docs/uploads/.gitkeep

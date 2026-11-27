@@ -6,14 +6,15 @@ from typing import Any, Literal
 
 from langchain_core.messages import AIMessage, SystemMessage
 
-from agent.clients import rag_answer
+from agent.clients import rag_retrieve
 from agent.graph.state import AgentState
 from agent.models import get_main_model
 from agent.tools import get_main_agent_tools
 
 _SYSTEM = """You are the main support desk agent for a fictional store.
 Use tools to look up orders, shipping, eligibility, and customers.
-Answer policy questions using any retrieved policy context provided.
+Answer policy questions using only the retrieved policy context.
+If no policy context is provided, say you don't have that policy.
 Never claim you issued a refund or sent an email — those require human confirmation flows.
 Be concise and cite order ids when relevant.
 If the customer wants a refund or an email, tell them to ask explicitly for that
@@ -31,10 +32,16 @@ async def prepare_main(state: AgentState) -> dict[str, Any]:
             if getattr(msg, "type", None) == "human":
                 last = getattr(msg, "content", "") or ""
                 break
-        rag = await rag_answer(str(last))
+        rag = await rag_retrieve(str(last))
         docs = []
-        if rag.get("answer"):
-            docs.append({"answer": rag["answer"], "citations": rag.get("citations") or []})
+        for document in rag.get("documents") or []:
+            meta = (
+                f"metadata: version={document.get('version')} "
+                f"pages={document.get('page_start')}-{document.get('page_end')} "
+                f"source={document.get('source_uri') or document.get('title')}"
+            )
+            body = document.get("embed_text") or document.get("content") or ""
+            docs.append({"content": f"{body}\n{meta}"})
         updates["documents"] = docs
         updates["citations"] = rag.get("citations") or []
     return updates
@@ -47,7 +54,7 @@ async def main_agent(state: AgentState) -> dict[str, Any]:
     doc_block = ""
     if docs:
         doc_block = "\n\nRetrieved policy context:\n" + "\n".join(
-            str(d.get("answer") or d) for d in docs
+            str(d.get("content") or d.get("answer") or d) for d in docs
         )
     messages = [
         SystemMessage(content=_SYSTEM + doc_block),

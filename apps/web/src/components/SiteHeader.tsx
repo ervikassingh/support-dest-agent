@@ -17,6 +17,26 @@ function ChatIcon() {
   );
 }
 
+function DocumentsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M7 3.75h7.2L19 8.6V20.25H7V3.75Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 3.75V9h5.2M9.5 13h6M9.5 16.5h6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function ApprovalsIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -59,6 +79,7 @@ function BrandMark() {
 
 const links = [
   { href: '/', label: 'Chat', icon: ChatIcon },
+  { href: '/documents', label: 'Documents', icon: DocumentsIcon },
   { href: '/approvals', label: 'Approvals', icon: ApprovalsIcon },
 ] as const;
 

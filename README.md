@@ -15,9 +15,9 @@ apps/
   rag/           Python Poetry — RAG HTTP skeleton (:8001)
 packages/
   typescript-config/   Shared TSConfig bases
-docs/            Policy corpus (placeholder)
+docs/            Seed policies (`docs/seed`) and ingest uploads (`docs/uploads`)
 data/            Future seeded orders DB (MCP uses in-memory stubs today)
-docker-compose.yml     Postgres for future checkpointer (:5432)
+docker-compose.yml     ParadeDB + Redis (:5432, :6379)
 ```
 
 ## Architecture (request path)
@@ -57,7 +57,8 @@ flowchart LR
 | agent | 8000 |
 | rag | 8001 |
 | mcp | 8002 (`/mcp`, `/health`) |
-| postgres | 5432 |
+| postgres (ParadeDB) | 5432 |
+| redis | 6379 |
 
 ## Install
 
@@ -72,8 +73,9 @@ pnpm setup
 # pnpm install:python
 # pnpm env:copy
 
-# Optional: Postgres for the future checkpointer
-docker compose up -d postgres
+# ParadeDB (pgvector + BM25) and Redis (BullMQ). Fresh volume; the old
+# Postgres 16 volume is left unused.
+docker compose up -d postgres redis
 ```
 
 ## Run
@@ -106,7 +108,8 @@ Open http://localhost:3000 for chat and http://localhost:3000/approvals for HITL
 | Nest `/chat`, `/approvals/:id`, `/health` | Real HTTP; proxy to agent |
 | Agent FastAPI `/health`, `/chat`, `/threads/:id/resume` | Real HTTP; LangGraph + PostgresSaver |
 | LangGraph compile / nodes | Real: router, cheap/main, tools, refund/email HITL, summarize |
-| RAG `/retrieve`, `/answer` | Placeholder empty/refusal responses |
+| RAG ingest, hybrid search, `/answer`, `/answer/stream`, `/evals/run` | Real (ParadeDB + OpenRouter embeddings) |
+| Documents page `POST /documents` | Nest upload, BullMQ, status from RAG |
 | MCP tools + fake orders | Real Streamable HTTP server (:8002) + in-memory data |
 | `issue_refund` without `approval_id` | Real refusal |
 | MCP client inside agent | Per-call Streamable HTTP for read tools; writes graph-gated |

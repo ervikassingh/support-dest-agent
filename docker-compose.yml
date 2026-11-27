@@ -1,13 +1,16 @@
-# Local infra. Default: Postgres for the future LangGraph checkpointer.
-# App processes usually run on the host via pnpm / poetry (see README).
+# Local infra. App processes run on the host via pnpm / poetry.
+#
+# ParadeDB is Postgres with pgvector and pg_search (BM25). The image is
+# Postgres 17, so it uses its own volume. The old Postgres 16 volume
+# (postgres-data) is left in Docker and is not mounted.
 #
 # Ports (host):
 #   web 3000 | api 3001 | agent 8000 | rag 8001 | mcp 8002
-#   postgres 5432
+#   postgres 5432 | redis 6379
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: paradedb/paradedb:latest
     environment:
       POSTGRES_USER: support
       POSTGRES_PASSWORD: support
@@ -15,12 +18,22 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - paradedb-data:/var/lib/postgresql/
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U support -d support_desk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-  postgres-data:
+  paradedb-data:

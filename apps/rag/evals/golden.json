@@ -1,0 +1,255 @@
+[
+  {
+    "id": "refunds-window",
+    "question": "How long do I have to request a refund after delivery?",
+    "relevant": [
+      {
+        "title": "Refunds",
+        "header_path": "Refunds > Window"
+      }
+    ],
+    "reference_answer": "A refund request must arrive within 30 days of the delivery date."
+  },
+  {
+    "id": "refunds-digital-goods",
+    "question": "Can I refund a digital download, and how long do I have?",
+    "relevant": [
+      {
+        "title": "Refunds",
+        "header_path": "Refunds > Digital goods"
+      }
+    ],
+    "reference_answer": "Digital goods can be refunded within 14 days if the file was never downloaded."
+  },
+  {
+    "id": "refunds-payment-method",
+    "question": "Where is a refund sent, and when is store credit used?",
+    "relevant": [
+      {
+        "title": "Refunds",
+        "header_path": "Refunds > Payment method"
+      }
+    ],
+    "reference_answer": "Refunds are sent to the original payment method. Store credit is offered only when that method fails."
+  },
+  {
+    "id": "refunds-shipping-fees",
+    "question": "Do I get the shipping fee back when I return an item?",
+    "relevant": [
+      {
+        "title": "Refunds",
+        "header_path": "Refunds > Shipping fees"
+      }
+    ],
+    "reference_answer": "Shipping fees are non-refundable unless the store caused the return."
+  },
+  {
+    "id": "shipping-standard",
+    "question": "How long does standard shipping take?",
+    "relevant": [
+      {
+        "title": "Shipping",
+        "header_path": "Shipping > Standard"
+      }
+    ],
+    "reference_answer": "Standard shipping takes 5 to 7 business days."
+  },
+  {
+    "id": "shipping-express",
+    "question": "How fast is express shipping, and can it go to a P.O. box?",
+    "relevant": [
+      {
+        "title": "Shipping",
+        "header_path": "Shipping > Express"
+      }
+    ],
+    "reference_answer": "Express shipping takes 2 business days and is unavailable for P.O. boxes."
+  },
+  {
+    "id": "shipping-free-shipping",
+    "question": "When is standard shipping free?",
+    "relevant": [
+      {
+        "title": "Shipping",
+        "header_path": "Shipping > Free shipping"
+      }
+    ],
+    "reference_answer": "Orders over $50 ship free with standard shipping."
+  },
+  {
+    "id": "returns-condition",
+    "question": "What condition does an item have to be in to be returned?",
+    "relevant": [
+      {
+        "title": "Returns",
+        "header_path": "Returns > Condition"
+      }
+    ],
+    "reference_answer": "Returned items must be unworn and include the original tags."
+  },
+  {
+    "id": "returns-label",
+    "question": "Where do I get a return label?",
+    "relevant": [
+      {
+        "title": "Returns",
+        "header_path": "Returns > Label"
+      }
+    ],
+    "reference_answer": "The return label is generated from the customer account page."
+  },
+  {
+    "id": "returns-timeline",
+    "question": "How soon is a refund issued after the warehouse scans a return?",
+    "relevant": [
+      {
+        "title": "Returns",
+        "header_path": "Returns > Timeline"
+      }
+    ],
+    "reference_answer": "The refund is issued 5 business days after the warehouse scans the return."
+  },
+  {
+    "id": "warranty-coverage",
+    "question": "How long is the hardware warranty and what does it cover?",
+    "relevant": [
+      {
+        "title": "Warranty",
+        "header_path": "Warranty > Coverage"
+      }
+    ],
+    "reference_answer": "Hardware includes a 1 year warranty for manufacturer defects."
+  },
+  {
+    "id": "warranty-exclusions",
+    "question": "Does the warranty cover accidental damage?",
+    "relevant": [
+      {
+        "title": "Warranty",
+        "header_path": "Warranty > Exclusions"
+      }
+    ],
+    "reference_answer": "Accidental damage is not covered by the warranty."
+  },
+  {
+    "id": "warranty-claims",
+    "question": "What do I need to submit a warranty claim?",
+    "relevant": [
+      {
+        "title": "Warranty",
+        "header_path": "Warranty > Claims"
+      }
+    ],
+    "reference_answer": "A warranty claim needs the order id and a short description of the defect."
+  },
+  {
+    "id": "privacy-data-we-store",
+    "question": "What customer data does the store keep?",
+    "relevant": [
+      {
+        "title": "Privacy",
+        "header_path": "Privacy > Data we store"
+      }
+    ],
+    "reference_answer": "The store keeps the customer name, email address, and order history."
+  },
+  {
+    "id": "privacy-selling-data",
+    "question": "Does the store sell personal data?",
+    "relevant": [
+      {
+        "title": "Privacy",
+        "header_path": "Privacy > Selling data"
+      }
+    ],
+    "reference_answer": "Personal data is never sold to third parties."
+  },
+  {
+    "id": "privacy-deletion",
+    "question": "How do I ask for my account to be deleted?",
+    "relevant": [
+      {
+        "title": "Privacy",
+        "header_path": "Privacy > Deletion"
+      }
+    ],
+    "reference_answer": "Account deletion requests go to privacy@northwind.example."
+  },
+  {
+    "id": "privacy-invoices",
+    "question": "How long are invoices kept?",
+    "relevant": [
+      {
+        "title": "Privacy",
+        "header_path": "Privacy > Invoices"
+      }
+    ],
+    "reference_answer": "Invoices are retained for 7 years."
+  },
+  {
+    "id": "payments-cards",
+    "question": "Which cards are accepted?",
+    "relevant": [
+      {
+        "title": "Payments",
+        "header_path": "Payments > Cards"
+      }
+    ],
+    "reference_answer": "Accepted cards are Visa, Mastercard, and American Express."
+  },
+  {
+    "id": "payments-cash",
+    "question": "Can I pay cash on delivery?",
+    "relevant": [
+      {
+        "title": "Payments",
+        "header_path": "Payments > Cash"
+      }
+    ],
+    "reference_answer": "Cash on delivery is not available."
+  },
+  {
+    "id": "payments-retries",
+    "question": "What happens when a card payment fails?",
+    "relevant": [
+      {
+        "title": "Payments",
+        "header_path": "Payments > Retries"
+      }
+    ],
+    "reference_answer": "A failed payment is retried 3 times over 24 hours."
+  },
+  {
+    "id": "account-email",
+    "question": "Can two accounts share an email address?",
+    "relevant": [
+      {
+        "title": "Account",
+        "header_path": "Account > Email"
+      }
+    ],
+    "reference_answer": "Each email address can belong to only one account."
+  },
+  {
+    "id": "account-password-reset",
+    "question": "How long is a password reset link valid?",
+    "relevant": [
+      {
+        "title": "Account",
+        "header_path": "Account > Password reset"
+      }
+    ],
+    "reference_answer": "A password reset link expires after 30 minutes."
+  },
+  {
+    "id": "account-closure",
+    "question": "What happens to order history when I close my account?",
+    "relevant": [
+      {
+        "title": "Account",
+        "header_path": "Account > Closure"
+      }
+    ],
+    "reference_answer": "Closing an account keeps order history for 7 years."
+  }
+]

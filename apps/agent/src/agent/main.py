@@ -63,6 +63,11 @@ class ResumeRequest(BaseModel):
     note: str | None = None
 
 
+class EvalRequest(BaseModel):
+    n: int = Field(default=5, ge=1, le=10)
+    k: int = Field(default=5, ge=1, le=10)
+
+
 def _require_graph():
     if graph is None:
         raise HTTPException(
@@ -211,6 +216,18 @@ async def resume(thread_id: str, body: ResumeRequest) -> dict[str, Any]:
         "threadId": thread_id,
         "approval": body.model_dump(),
     }
+
+
+@app.post("/evals/run")
+async def evals_run(body: EvalRequest) -> dict[str, Any]:
+    """Tool-call accuracy, pass@k, and pass^k. Each task is run n times (default 5)."""
+    g = _require_graph()
+    from agent.evals_runner import run_agent_evals
+
+    try:
+        return await run_agent_evals(g, n=body.n, k=body.k)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 def run() -> None:

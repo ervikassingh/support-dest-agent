@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     langsmith_tracing: bool = False
     langsmith_api_key: str | None = None
     langsmith_project: str = "support-desk-agent"
+    chat_input_usd_per_million: float | None = None
+    chat_output_usd_per_million: float | None = None
 
 
 settings = Settings()
