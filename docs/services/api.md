@@ -2,7 +2,7 @@
 
 NestJS backend-for-frontend on `:3001`. It is the only service the browser calls. It validates input, forwards chat and approvals to the agent, and runs the upload half of document ingest. It holds no domain logic ([ADR 0002](../decisions/0002-nest-as-thin-bff.md)).
 
-Code: `apps/api/src/`. `agent-client.service.ts` wraps calls to the agent; `chat/`, `approvals/`, and `documents/` are feature modules.
+Code: `apps/api/src/`. `agent-client.service.ts` wraps calls to the agent; `chat/` (including `threads.controller.ts`), `approvals/`, `documents/`, and `evals/` are feature modules.
 
 ## Endpoints
 
@@ -11,6 +11,8 @@ Code: `apps/api/src/`. `agent-client.service.ts` wraps calls to the agent; `chat
 | GET | `/health` | — | Does not check downstreams |
 | POST | `/chat` | agent `POST /chat` | 400 if `message` is blank |
 | POST | `/approvals/:threadId` | agent `POST /threads/:id/resume` | `amount` required for `edit` |
+| GET | `/approvals?state=pending\|decided` | agent `GET /approvals` | Approval queue and decision history |
+| GET | `/threads`, `/threads/:threadId` | agent `GET /threads`, `/threads/{id}` | Saved chats; detail includes messages and approvals |
 | POST | `/documents` | rag reserve, disk, Redis | Multipart `file` (≤ 20 MB) or JSON `{url}`, exactly one |
 | GET | `/documents`, `/documents/:id` | rag | Mapped to camelCase |
 
@@ -23,7 +25,8 @@ flowchart LR
   v -->|yes| fwd[forward to agent]
   fwd --> ok{agent 2xx?}
   ok -->|yes| pass[Return agent JSON unchanged]
-  ok -->|non-2xx or unreachable| e503[503]
+  ok -->|4xx| e4xx[same status and detail]
+  ok -->|5xx or unreachable| e503[503]
 ```
 
 Agent responses pass through unchanged, so new agent fields reach the browser without api changes. For uploads, api asks rag to reserve a row and path, writes the bytes there itself, then enqueues the ingest job ([Document ingest](../flows/document-ingest.md)).
@@ -42,7 +45,6 @@ Reads `apps/api/.env`, then the root `.env`.
 ## Known gaps
 
 - **API-TD-1** — Uploads need a filesystem shared with rag.
-- **API-TD-2** — Agent 4xx errors (no paused run, paused for email) reach the browser as 503.
 - **API-TD-3** — No DTO validation pipe; `amount` is not range-checked.
 - **API-TD-4** — A failed file write leaves the document stuck in `queued`.
 - **API-TD-5** — No timeouts on calls to agent and rag.

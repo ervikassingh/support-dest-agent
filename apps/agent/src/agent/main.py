@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 from pydantic import BaseModel, Field, model_validator
 
-from agent import evals_jobs
+from agent import evals_jobs, history
 from agent.clients import mcp_connection_hint
 from agent.graph import build_graph
 from agent.memory import MemoryBundle
@@ -47,7 +47,12 @@ async def lifespan(_app: FastAPI):
         await evals_jobs.start()
     except Exception as exc:  # noqa: BLE001
         logger.error("Eval storage not ready: %s", exc)
+    try:
+        await history.start()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Chat history storage not ready: %s", exc)
     yield
+    await history.stop()
     await evals_jobs.stop()
     await memory.stop()
     graph = None
@@ -148,8 +153,16 @@ async def health() -> dict[str, Any]:
 async def chat(body: ChatRequest) -> dict[str, Any]:
     g = _require_graph()
     thread_id = body.thread_id or f"thread-{uuid.uuid4().hex[:10]}"
-    config = _config(thread_id)
     text = body.message.strip()
+    response = await _chat_turn(g, thread_id, text)
+    await history.record_turn(
+        thread_id, text, response["reply"], response["status"], response.get("interrupt")
+    )
+    return response
+
+
+async def _chat_turn(g: Any, thread_id: str, text: str) -> dict[str, Any]:
+    config = _config(thread_id)
 
     snapshot = await g.aget_state(config)
     if snapshot.next:
@@ -228,12 +241,45 @@ async def resume(thread_id: str, body: ResumeRequest) -> dict[str, Any]:
         ),
         config,
     )
+    message = _reply_from_state(result)
+    outcome = result.get("refund_outcome") or ("rejected" if body.decision == "reject" else "issued")
+    await history.record_decision(thread_id, body.decision, body.amount, body.note, outcome, message)
     return {
         "status": "resumed" if body.decision != "reject" else "rejected",
-        "message": _reply_from_state(result),
+        "outcome": outcome,
+        "message": message,
         "threadId": thread_id,
         "approval": body.model_dump(),
     }
+
+
+def _require_history() -> None:
+    if not history.ready():
+        raise HTTPException(status_code=503, detail="Chat history is unavailable (Postgres)")
+
+
+@app.get("/threads")
+async def threads_list(limit: int = Query(default=50, ge=1, le=200)) -> list[dict[str, Any]]:
+    _require_history()
+    return await history.list_threads(limit)
+
+
+@app.get("/threads/{thread_id}")
+async def threads_get(thread_id: str) -> dict[str, Any]:
+    _require_history()
+    thread = await history.get_thread(thread_id)
+    if thread is None:
+        raise HTTPException(status_code=404, detail=f"No chat found for {thread_id}")
+    return thread
+
+
+@app.get("/approvals")
+async def approvals_list(
+    state: Literal["pending", "decided"] = "pending",
+    limit: int = Query(default=50, ge=1, le=200),
+) -> list[dict[str, Any]]:
+    _require_history()
+    return await history.list_approvals(state, limit)
 
 
 @app.post("/evals/run")

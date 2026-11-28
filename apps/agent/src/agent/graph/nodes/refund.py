@@ -117,6 +117,7 @@ async def issue_refund_node(state: AgentState, *, store: Any) -> dict[str, Any]:
             "messages": [AIMessage(content=text)],
             "final_reply": text,
             "interrupt_kind": "none",
+            "refund_outcome": "rejected",
         }
 
     amount = (
@@ -154,4 +155,5 @@ async def issue_refund_node(state: AgentState, *, store: Any) -> dict[str, Any]:
         "messages": [AIMessage(content=text)],
         "final_reply": text,
         "interrupt_kind": "none",
+        "refund_outcome": "failed" if result.get("error") else "issued",
     }

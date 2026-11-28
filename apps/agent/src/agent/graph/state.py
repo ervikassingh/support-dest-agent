@@ -21,6 +21,7 @@ class AgentState(TypedDict, total=False):
     email_draft: dict[str, Any]
     refund_memory: list[dict[str, Any]]
     approval: dict[str, Any]
+    refund_outcome: Literal["issued", "failed", "rejected"]
     email_confirmed: bool
     step_count: int
     token_count: int

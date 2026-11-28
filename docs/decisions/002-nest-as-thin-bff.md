@@ -26,4 +26,4 @@ MCP lives in its own service ([0003](0003-mcp-as-shared-http-service.md)). Retri
 
 - Auth and sessions have one place to land when they are built. They are not built yet ([X-TD-1](../../README.md#known-gaps)).
 - Every chat turn pays an extra hop. Negligible next to model latency.
-- Nest maps agent and rag failures to HTTP errors for the UI. Today it collapses most agent errors to 503 ([API-TD-2](../services/api.md#known-gaps)).
+- Nest maps agent and rag failures to HTTP errors for the UI. Agent 4xx errors keep their status and detail; 5xx and unreachable become 503.

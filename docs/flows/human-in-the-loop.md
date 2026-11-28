@@ -34,7 +34,7 @@ sequenceDiagram
 ```
 
 - An ineligible order, or one with no id, ends the turn with an explanation and never pauses.
-- The operator reaches the paused thread through the chat's **Review on Approvals** link, which carries the thread id. The decision goes web → api `POST /approvals/:threadId` → agent `POST /threads/:id/resume`.
+- Each pause adds a `pending` row to `refund_approvals` with the draft. The Approvals page lists pending rows as a queue and shows the draft and the transcript; the chat's **Review on Approvals** link opens the row for that thread. The decision goes web → api `POST /approvals/:threadId` → agent `POST /threads/:id/resume`, which marks the row `issued`, `failed`, or `rejected` and adds the result to the chat transcript. Decided rows stay browsable under **Decided**.
 - `edit` uses the operator's amount; `approve` uses the drafted one.
 
 ### Signed approval id
@@ -74,6 +74,5 @@ Yes-like replies: `yes, y, confirm, approve, send, ok, okay`. No-like: `no, n, c
 
 ## Limits today
 
-- The Approvals page shows no draft; the operator relies on the chat transcript (WEB-TD-1).
 - No authentication: anyone who can reach api can approve a refund ([known gaps](../../README.md#known-gaps)).
 - The signature proves the amount was approved, not who approved it (AGENT-TD-5).

@@ -5,6 +5,15 @@ import { AgentClientService } from '../agent-client.service';
 export class ApprovalsService {
   constructor(private readonly agent: AgentClientService) {}
 
+  list(state = 'pending', limit?: string) {
+    if (state !== 'pending' && state !== 'decided') {
+      throw new BadRequestException('state must be pending | decided');
+    }
+    const query = new URLSearchParams({ state });
+    if (limit) query.set('limit', limit);
+    return this.agent.getJson(`/approvals?${query.toString()}`);
+  }
+
   async decide(
     threadId: string,
     body: { decision?: 'approve' | 'edit' | 'reject'; amount?: number; note?: string },

@@ -10,10 +10,23 @@ Code: `apps/agent/src/agent/`. Graph in `graph/build.py`, nodes in `graph/nodes/
 | --- | --- | --- |
 | GET | `/health` | `ok` when Postgres memory is ready and the graph compiled, else `degraded` |
 | POST | `/chat` | `{message, threadId?}`. Runs one turn, or resumes an open email confirmation. Returns `{reply, threadId, status: ok\|interrupted, interrupt?}` |
-| POST | `/threads/{id}/resume` | `{decision: approve\|edit\|reject, amount?, note?}`. Resumes a paused refund only. 404 if nothing is paused, 400 if paused for email |
+| POST | `/threads/{id}/resume` | `{decision: approve\|edit\|reject, amount?, note?}`. Resumes a paused refund only. 404 if nothing is paused, 400 if paused for email. Returns `outcome: issued\|failed\|rejected` |
+| GET | `/threads?limit=50` | Saved chats, newest first, with status and latest approval status |
+| GET | `/threads/{id}` | One chat with its messages and approvals. 404 if unknown |
+| GET | `/approvals?state=pending\|decided` | Pending approvals oldest first, or decided ones newest first |
 | POST | `/evals/run` | `{n=5, k=5}`. Tool-call eval through the live graph |
 
-Everything except `/health` returns 503 if the graph did not compile.
+Everything except `/health` returns 503 if the graph did not compile. The history endpoints return 503 if their tables could not be created.
+
+## Chat history
+
+`history.py` keeps what the user and operator saw, separate from the LangGraph checkpoint, in three Postgres tables created at startup:
+
+- `chat_threads`: id, title (first message), status (`active`, `awaiting_approval`, `awaiting_email`), timestamps.
+- `chat_messages`: every user message and agent reply, plus the operator's result after a resume.
+- `refund_approvals`: one row per refund pause, with the draft. Status `pending`, then `issued`, `failed`, or `rejected` with decision, final amount, note, and result. At most one pending row per thread.
+
+`POST /chat` and `POST /threads/{id}/resume` write these after the graph returns. A write failure is logged and never fails the request.
 
 ## LangGraph
 
@@ -57,7 +70,7 @@ flowchart TD
 
 ## State
 
-`AgentState` in `graph/state.py`: `messages`, `intent`, `order_id`, `customer_id`, `documents`, `citations`, `refund_draft`, `refund_memory`, `approval`, `email_draft`, `email_confirmed`, `step_count`, `token_count`, `summary`, `interrupt_kind` (`none`, `refund`, `email`), `final_reply`.
+`AgentState` in `graph/state.py`: `messages`, `intent`, `order_id`, `customer_id`, `documents`, `citations`, `refund_draft`, `refund_memory`, `approval`, `refund_outcome`, `email_draft`, `email_confirmed`, `step_count`, `token_count`, `summary`, `interrupt_kind` (`none`, `refund`, `email`), `final_reply`.
 
 ## Config
 
@@ -82,7 +95,8 @@ Model clients are cached per process: restart after changing a model.
 
 ## Known gaps
 
-- **AGENT-TD-5** — `approval_id` is signed by the agent, not tied to an operator; there is no approval record.
+- **AGENT-TD-5** — `approval_id` is signed by the agent, not tied to an operator; `refund_approvals` records the decision but not who made it.
+- **AGENT-TD-15** — Threads paused before chat history existed have no approval row until the customer sends another message.
 - **AGENT-TD-6** — Email recipient and body are hard-coded; `EMAIL_PROVIDER` other than `stub` reports `sent` without sending.
 - **AGENT-TD-7** — No weak-retrieval refusal; citations are kept in state but not returned by `/chat`.
 - **AGENT-TD-8** — The router sees only the last message, so "yes please" loses context.

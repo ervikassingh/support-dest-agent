@@ -1,14 +1,17 @@
 # web
 
-Next.js 15 UI on `:3000`. Three pages, all client components that call api directly from the browser. Next is effectively a static host: no route handlers, server actions, or server-side fetching.
+Next.js 15 UI on `:3000`. Four pages, all client components that call api directly from the browser. Next is effectively a static host: no route handlers, server actions, or server-side fetching.
 
 | Route | File | Does |
 | --- | --- | --- |
-| `/` | `src/app/page.tsx` | Customer chat. Keeps the thread id, shows status, links to Approvals when a run is interrupted |
+| `/` | `src/components/ChatWorkspace.tsx` | Customer chat with a saved-chats sidebar. Reads and writes `?thread=`. Polls the open thread every 4 s while it waits for approval, so the operator's result appears |
 | `/documents` | `src/components/DocumentsPanel.tsx` | Upload a file or URL; list documents, polling every 2 s while any is in progress |
-| `/approvals` | `src/components/ApprovalsForm.tsx` | Operator approve, edit, or reject for a paused refund. Reads `?threadId=` |
+| `/approvals` | `src/components/ApprovalsWorkspace.tsx` | Approval queue with Pending and Decided lists. Shows the refund draft, earlier operator decisions for the customer, and the transcript. Pending: approve, edit, or reject. Decided: read-only record. Reads `?threadId=` or `?approval=`; polls pending every 5 s |
+| `/evals` | `src/components/evals/EvalsDashboard.tsx` | Run eval suites and browse run history |
 
-The thread id is held in React state and shown with a copy button. Copying it into Approvals is the hand-off from customer to operator ([Human in the loop](../flows/human-in-the-loop.md)).
+Chat and Approvals use the same layout as Evals: main panel plus a history sidebar (`evals-grid`, `history-item`). Shared types and the fetch helper are in `src/components/history/model.ts`. Every chat is visible to everyone; there is no login.
+
+The chat's **Review on Approvals** link opens the pending approval for that thread ([Human in the loop](../flows/human-in-the-loop.md)).
 
 ## Config
 
@@ -18,12 +21,10 @@ The thread id is held in React state and shown with a copy button. Copying it in
 
 ## Known gaps
 
-- **WEB-TD-1** — The Approvals page does not show the refund draft (order, amount, eligibility) the operator is approving.
-- **WEB-TD-2** — Chat history and thread id are lost on reload.
 - **WEB-TD-3** — No streaming replies.
-- **WEB-TD-4** — No list of pending approvals; operators need the thread id from the chat.
-- **WEB-TD-5** — API base URL and fetch handling duplicated across three files.
+- **WEB-TD-5** — API base URL and fetch handling duplicated across the documents, evals, and history modules.
 - **WEB-TD-6** — Status colors key off display strings.
 - **WEB-TD-7** — Documents polling restarts on unrelated changes.
+- **WEB-TD-8** — Chats cannot be renamed, deleted, or searched.
 
 Decisions: [web](../decisions/service-decisions.md#web).

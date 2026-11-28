@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApprovalsService } from './approvals.service';
 
 type ApprovalBody = {
@@ -10,6 +10,11 @@ type ApprovalBody = {
 @Controller('approvals')
 export class ApprovalsController {
   constructor(private readonly approvalsService: ApprovalsService) {}
+
+  @Get()
+  list(@Query('state') state?: string, @Query('limit') limit?: string) {
+    return this.approvalsService.list(state, limit);
+  }
 
   @Post(':threadId')
   decide(@Param('threadId') threadId: string, @Body() body: ApprovalBody) {

@@ -22,7 +22,7 @@ flowchart LR
 
 | Service | Stack | Owns |
 | --- | --- | --- |
-| [web](docs/services/web.md) | Next.js 15 | Chat, Documents, and Approvals pages |
+| [web](docs/services/web.md) | Next.js 15 | Chat (with saved chats), Documents, Approvals (queue and decision history), and Evals pages |
 | [api](docs/services/api.md) | NestJS 11 | The only browser-facing API; forwards to agent and rag; produces ingest jobs |
 | [agent](docs/services/agent.md) | Python, FastAPI, LangGraph | Conversation graph, routing, human-in-the-loop pauses, checkpoints |
 | [rag](docs/services/rag.md) | Python, FastAPI | Documents, parsing, chunking, embeddings, hybrid search, RAG evals |
