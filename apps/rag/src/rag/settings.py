@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     port: int = 8001
     database_url: str = "postgresql://support:support@localhost:5432/support_desk"
     redis_url: str = "redis://localhost:6379"
-    uploads_dir: Path = _REPO / "docs" / "uploads"
+    uploads_dir: Path = _REPO / "data" / "uploads"
 
     openrouter_api_key: str | None = None
     openrouter_base_url: str = "https://openrouter.ai/api/v1"

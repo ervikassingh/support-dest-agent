@@ -10,7 +10,7 @@ from rag.seed import GOLDEN_PATH, golden_cases
 def main() -> None:
     """Ragas testset generation needs a live corpus and is review-only.
 
-    The committed golden file is the curated set built from docs/seed.
+    The committed golden file is the curated set built from data/seed.
     This command writes golden.generated.json beside it. Replace golden.json
     after you have read the generated questions.
     """

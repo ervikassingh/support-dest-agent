@@ -38,7 +38,7 @@ Postgres (ParadeDB, with pgvector and BM25) holds agent checkpoints and rag chun
 | [`docs/flows/`](docs/flows) | [Chat](docs/flows/chat.md), [human in the loop](docs/flows/human-in-the-loop.md) (refund approval and email confirmation), [document ingest](docs/flows/document-ingest.md) |
 | [`docs/decisions/`](docs/decisions) | Numbered ADRs for cross-service choices, plus [service decisions](docs/decisions/service-decisions.md) |
 
-`docs/seed/` and `docs/uploads/` are runtime data used by rag, not documentation.
+`data/seed/` and `data/uploads/` are runtime data used by rag, not documentation.
 
 ## Setup
 

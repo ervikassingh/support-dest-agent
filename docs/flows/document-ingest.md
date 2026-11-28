@@ -7,7 +7,7 @@ sequenceDiagram
   participant W as web (Documents)
   participant A as api
   participant R as rag API
-  participant D as docs/uploads
+  participant D as data/uploads
   participant Q as Redis 'ingest'
   participant K as rag worker
   participant P as Postgres
@@ -34,7 +34,7 @@ sequenceDiagram
   end
 ```
 
-- rag owns the document rows and storage layout; api only writes the bytes to the path rag reserved. They must share the `docs/uploads` directory.
+- rag owns the document rows and storage layout; api only writes the bytes to the path rag reserved. They must share the `data/uploads` directory.
 - The job id is the document id, so a repeated enqueue is a no-op. Failed jobs retry 3 times with backoff, then the row is marked `failed` with the error.
 - Re-uploading the same file name or URL creates a new version; old versions stay searchable.
 - `poetry run rag-seed --ingest` skips api and Redis and ingests the seed corpus directly.

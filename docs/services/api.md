@@ -31,6 +31,10 @@ flowchart LR
 
 Agent responses pass through unchanged, so new agent fields reach the browser without api changes. For uploads, api asks rag to reserve a row and path, writes the bytes there itself, then enqueues the ingest job ([Document ingest](../flows/document-ingest.md)).
 
+## Seed
+
+`pnpm --filter api seed` uploads each file in `data/seed` through that same path, then polls rag until the document is `done` or `failed`. Redis and the rag worker must already be running. Running it again stores a new version of each file. The agent can answer from the documents once they are `done`.
+
 ## Config
 
 Reads `apps/api/.env`, then the root `.env`.

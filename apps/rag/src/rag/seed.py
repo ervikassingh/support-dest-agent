@@ -11,7 +11,7 @@ from docx import Document
 from fpdf import FPDF
 
 _REPO = Path(__file__).resolve().parents[4]
-SEED_DIR = _REPO / "docs" / "seed"
+SEED_DIR = _REPO / "data" / "seed"
 GOLDEN_PATH = Path(__file__).resolve().parents[2] / "evals" / "golden.json"
 
 # heading, body, question. Bodies are the facts the evals grade against.
@@ -300,7 +300,7 @@ async def ingest_seed() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Write docs/seed and apps/rag/evals/golden.json")
+    parser = argparse.ArgumentParser(description="Write data/seed and apps/rag/evals/golden.json")
     parser.add_argument("--ingest", action="store_true", help="Also embed the seed files into ParadeDB")
     args = parser.parse_args()
     if args.ingest:

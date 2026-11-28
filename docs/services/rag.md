@@ -22,7 +22,7 @@ Run from `apps/rag`:
 
 ```bash
 poetry run rag-worker          # worker alone (set WORKER_ENABLED=false on the API)
-poetry run rag-seed --ingest   # write docs/seed/* and evals/golden.json, then ingest them
+poetry run rag-seed --ingest   # write data/seed/* and evals/golden.json, then ingest them
 poetry run rag-reindex         # re-embed after changing EMBEDDING_MODEL / EMBEDDING_DIM
 poetry run rag-golden          # draft golden cases into evals/golden.generated.json
 poetry run pytest
@@ -64,7 +64,7 @@ Reads the root `.env`, then `apps/rag/.env` (later wins).
 | Variable | Default |
 | --- | --- |
 | `DATABASE_URL`, `REDIS_URL` | local Postgres and Redis |
-| `UPLOADS_DIR` | `<repo>/docs/uploads` |
+| `UPLOADS_DIR` | `<repo>/data/uploads` |
 | `OPENROUTER_API_KEY` | required |
 | `MAIN_MODEL`, `JUDGE_MODEL` | `anthropic/claude-haiku-4.5`, `openai/gpt-4.1` |
 | `EMBEDDING_MODEL`, `EMBEDDING_DIM` | `openai/text-embedding-3-small`, `1536` |

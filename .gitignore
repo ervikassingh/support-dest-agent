@@ -48,6 +48,6 @@ coverage/
 # Docker
 postgres-data/
 
-# Ingested uploads (seed corpus under docs/seed is tracked)
-docs/uploads/**
-!docs/uploads/.gitkeep
+# Ingested uploads (seed corpus under data/seed is tracked)
+data/uploads/**
+!data/uploads/.gitkeep
