@@ -8,11 +8,12 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
+from agent import evals_jobs
 from agent.clients import mcp_connection_hint
 from agent.graph import build_graph
 from agent.memory import MemoryBundle
@@ -42,7 +43,12 @@ async def lifespan(_app: FastAPI):
     else:
         graph = None
         logger.error("LangGraph not compiled: %s", memory.error)
+    try:
+        await evals_jobs.start()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Eval storage not ready: %s", exc)
     yield
+    await evals_jobs.stop()
     await memory.stop()
     graph = None
 
@@ -66,6 +72,18 @@ class ResumeRequest(BaseModel):
 class EvalRequest(BaseModel):
     n: int = Field(default=5, ge=1, le=10)
     k: int = Field(default=5, ge=1, le=10)
+
+
+class EvalJobRequest(BaseModel):
+    suite: Literal["agent_tools", "agent_safety"]
+    n: int = Field(default=5, ge=1, le=10)
+    k: int = Field(default=5, ge=1, le=10)
+
+    @model_validator(mode="after")
+    def _k_within_n(self) -> EvalJobRequest:
+        if self.k > self.n:
+            raise ValueError("k cannot be larger than n")
+        return self
 
 
 def _require_graph():
@@ -228,6 +246,56 @@ async def evals_run(body: EvalRequest) -> dict[str, Any]:
         return await run_agent_evals(g, n=body.n, k=body.k)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+def _require_eval_storage() -> None:
+    if not evals_jobs.ready():
+        raise HTTPException(status_code=503, detail="Eval storage is unavailable (Postgres)")
+
+
+@app.post("/evals/jobs", status_code=202)
+async def evals_job_start(body: EvalJobRequest) -> dict[str, Any]:
+    _require_eval_storage()
+    if body.suite == "agent_tools":
+        g = _require_graph()
+        from agent.evals_runner import load_tasks, run_agent_evals
+
+        params = {"n": body.n, "k": body.k}
+        total = len(load_tasks()) * body.n
+
+        async def job(progress):
+            return await run_agent_evals(g, n=body.n, k=body.k, on_progress=progress)
+    else:
+        from agent.evals_safety import load_dataset, run_safety_evals
+
+        params = {}
+        total = len(load_dataset())
+
+        async def job(progress):
+            return await run_safety_evals(on_progress=progress)
+
+    try:
+        return await evals_jobs.start_run(body.suite, params, total, job)
+    except evals_jobs.RunInProgress as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.get("/evals/jobs")
+async def evals_job_list(
+    suite: Literal["agent_tools", "agent_safety"],
+    limit: int = Query(default=20, ge=1, le=100),
+) -> list[dict[str, Any]]:
+    _require_eval_storage()
+    return await evals_jobs.list_runs(suite, limit)
+
+
+@app.get("/evals/jobs/{run_id}")
+async def evals_job_get(run_id: uuid.UUID) -> dict[str, Any]:
+    _require_eval_storage()
+    row = await evals_jobs.get_run(str(run_id))
+    if row is None:
+        raise HTTPException(status_code=404, detail="Eval run not found")
+    return row
 
 
 def run() -> None:

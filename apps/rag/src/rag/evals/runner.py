@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
 
@@ -67,12 +68,15 @@ async def run_rag_evals(
     answer: bool = True,
     judge: bool = True,
     limit: int | None = None,
+    on_progress: Callable[[int], Awaitable[None]] | None = None,
 ) -> dict[str, Any]:
     cases = load_golden()
     if limit is not None:
         cases = cases[:limit]
     rows = []
     for case in cases:
+        if on_progress is not None:
+            await on_progress(len(rows))
         found = await retrieve(case["question"], top_k=10)
         documents = found["documents"]
         labels = case["relevant"]
@@ -88,10 +92,17 @@ async def run_rag_evals(
             "id": case["id"],
             "question": case["question"],
             "relevance_source": source,
+            "expected": labels,
+            "reference_answer": case.get("reference_answer"),
             "ranking": _ranking(flags, n_relevant),
             "retrieved": [
-                {"title": doc.get("title"), "header_path": doc.get("header_path"), "score": doc.get("score")}
-                for doc in documents
+                {
+                    "title": doc.get("title"),
+                    "header_path": doc.get("header_path"),
+                    "score": doc.get("score"),
+                    "relevant": bool(flags[index]) if index < len(flags) else False,
+                }
+                for index, doc in enumerate(documents)
             ],
         }
         if answer:

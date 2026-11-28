@@ -3,7 +3,6 @@ name = "agent"
 version = "0.1.0"
 description = "LangGraph support-desk agent orchestrator (MCP client + RAG HTTP client)"
 authors = [{ name = "support-desk" }]
-readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "fastapi>=0.115.0",

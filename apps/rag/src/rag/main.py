@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import uuid
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -71,10 +72,12 @@ class EvalRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     from rag.db import close_pool, ensure_schema
+    from rag.evals.jobs import ensure_table
 
     logging.basicConfig(level=logging.INFO)
     configure_langsmith()
     await ensure_schema()
+    await ensure_table()
     settings = get_settings()
     if settings.worker_enabled:
         try:
@@ -198,6 +201,33 @@ async def evals_run(body: EvalRequest) -> dict[str, Any]:
         return await run_rag_evals(answer=body.answer, judge=body.judge, limit=body.limit)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/evals/jobs", status_code=202)
+async def evals_job_start(body: EvalRequest) -> dict[str, Any]:
+    from rag.evals.jobs import RunInProgress, start_run
+
+    try:
+        return await start_run(body.model_dump())
+    except RunInProgress as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.get("/evals/jobs")
+async def evals_job_list(limit: int = Query(default=20, ge=1, le=100)) -> list[dict[str, Any]]:
+    from rag.evals.jobs import list_runs
+
+    return await list_runs(limit)
+
+
+@app.get("/evals/jobs/{run_id}")
+async def evals_job_get(run_id: uuid.UUID) -> dict[str, Any]:
+    from rag.evals.jobs import get_run
+
+    row = await get_run(str(run_id))
+    if row is None:
+        raise HTTPException(status_code=404, detail="Eval run not found")
+    return row
 
 
 def run() -> None:

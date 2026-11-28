@@ -3,7 +3,6 @@ name = "rag"
 version = "0.1.0"
 description = "RAG ingest, hybrid search, and evals"
 authors = [{ name = "support-desk" }]
-readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "fastapi>=0.115.0",

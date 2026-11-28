@@ -56,6 +56,19 @@ function ApprovalsIcon() {
   );
 }
 
+function EvalsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 20h16M7 16v-4M12 16V7M17 16v-6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function BrandMark() {
   return (
     <span className="brand-mark" aria-hidden="true">
@@ -81,6 +94,7 @@ const links = [
   { href: '/', label: 'Chat', icon: ChatIcon },
   { href: '/documents', label: 'Documents', icon: DocumentsIcon },
   { href: '/approvals', label: 'Approvals', icon: ApprovalsIcon },
+  { href: '/evals', label: 'Evals', icon: EvalsIcon },
 ] as const;
 
 export function SiteHeader() {

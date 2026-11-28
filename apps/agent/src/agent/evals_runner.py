@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
 
@@ -56,7 +57,13 @@ def _cost(prompt_tokens: int, completion_tokens: int) -> float | None:
     ) / 1_000_000
 
 
-async def run_agent_evals(graph, *, n: int = 5, k: int = 5) -> dict[str, Any]:
+async def run_agent_evals(
+    graph,
+    *,
+    n: int = 5,
+    k: int = 5,
+    on_progress: Callable[[int], Awaitable[None]] | None = None,
+) -> dict[str, Any]:
     if k > n:
         raise ValueError("k cannot be larger than n")
     tasks = load_tasks()
@@ -64,6 +71,8 @@ async def run_agent_evals(graph, *, n: int = 5, k: int = 5) -> dict[str, Any]:
     for task in tasks:
         runs = []
         for _ in range(n):
+            if on_progress is not None:
+                await on_progress(len(task_rows) * n + len(runs))
             thread_id = f"eval-{uuid.uuid4().hex[:10]}"
             started = time.perf_counter()
             state = await graph.ainvoke(
